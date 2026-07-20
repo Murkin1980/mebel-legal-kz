@@ -1,10 +1,15 @@
 import { test, expect } from '@playwright/test';
+import { ensureTestUser, loginAsTestUser } from './helpers';
 
 /**
  * Accessibility checks for MebelLegal KZ - Stage 1.5
  *
  * Tests heading hierarchy, form labels, keyboard navigation, focus visibility.
  */
+
+test.beforeAll(async () => {
+  await ensureTestUser();
+});
 
 test.describe('Heading Hierarchy', () => {
   test('login page should have exactly one h1', async ({ page }) => {
@@ -14,6 +19,7 @@ test.describe('Heading Hierarchy', () => {
   });
 
   test('cases page should have at least one heading', async ({ page }) => {
+    await loginAsTestUser(page);
     await page.goto('/app/cases');
     const h1Count = await page.locator('h1').count();
     const h2Count = await page.locator('h2').count();
@@ -21,12 +27,14 @@ test.describe('Heading Hierarchy', () => {
   });
 
   test('case detail page should have proper heading', async ({ page }) => {
+    await loginAsTestUser(page);
     await page.goto('/app/cases');
     const heading = page.locator('h2').first();
     await expect(heading).toBeVisible();
   });
 
   test('audit page should have proper heading', async ({ page }) => {
+    await loginAsTestUser(page);
     await page.goto('/app/audit');
     const heading = page.locator('h2').first();
     await expect(heading).toBeVisible();
@@ -41,12 +49,10 @@ test.describe('Form Labels', () => {
     const passwordInput = page.locator('input[type="password"]');
 
     const emailHasLabel = await emailInput.evaluate((el) => {
-      const id = el.id;
-      return !!document.querySelector(`label[for="${id}"]`);
+      return !!document.querySelector(`label[for="${el.id}"]`);
     });
     const passwordHasLabel = await passwordInput.evaluate((el) => {
-      const id = el.id;
-      return !!document.querySelector(`label[for="${id}"]`);
+      return !!document.querySelector(`label[for="${el.id}"]`);
     });
 
     expect(emailHasLabel).toBe(true);
@@ -60,14 +66,14 @@ test.describe('Form Labels', () => {
 
     for (const inputId of inputs) {
       const hasLabel = await page.locator(`#${inputId}`).evaluate((el) => {
-        const id = el.id;
-        return !!document.querySelector(`label[for="${id}"]`);
+        return !!document.querySelector(`label[for="${el.id}"]`);
       });
       expect(hasLabel).toBe(true);
     }
   });
 
   test('audit filters should have aria-labels', async ({ page }) => {
+    await loginAsTestUser(page);
     await page.goto('/app/audit');
 
     await expect(page.locator('select[aria-label="Фильтр по типу события"]')).toBeVisible();
@@ -90,6 +96,7 @@ test.describe('Keyboard Navigation', () => {
   });
 
   test('should allow tab navigation on cases page', async ({ page }) => {
+    await loginAsTestUser(page);
     await page.goto('/app/cases');
 
     for (let i = 0; i < 3; i++) {
@@ -154,6 +161,7 @@ test.describe('ARIA Attributes', () => {
   });
 
   test('tables should have role attribute', async ({ page }) => {
+    await loginAsTestUser(page);
     await page.goto('/app/cases');
 
     const tables = page.locator('table');
@@ -169,6 +177,7 @@ test.describe('ARIA Attributes', () => {
   });
 
   test('expandable sections should have aria-expanded', async ({ page }) => {
+    await loginAsTestUser(page);
     await page.goto('/app/audit');
 
     const expandButtons = page.locator('button[aria-expanded]');
@@ -190,6 +199,7 @@ test.describe('Language and Structure', () => {
   });
 
   test('main content should be present', async ({ page }) => {
+    await loginAsTestUser(page);
     await page.goto('/app');
 
     const main = page.locator('main');
@@ -197,6 +207,7 @@ test.describe('Language and Structure', () => {
   });
 
   test('navigation should be present', async ({ page }) => {
+    await loginAsTestUser(page);
     await page.goto('/app');
 
     const nav = page.locator('nav');
@@ -206,6 +217,7 @@ test.describe('Language and Structure', () => {
 
 test.describe('Color Contrast', () => {
   test('status badges should have sufficient contrast', async ({ page }) => {
+    await loginAsTestUser(page);
     await page.goto('/app/cases');
 
     const badges = page.locator('[class*="rounded-full"]');
