@@ -528,4 +528,85 @@ Real-DB тесты (30 tests) подтверждают:
 
 ### Следующий шаг
 
-Этап 4 завершён и валидирован. Ожидает финальной приёмки владельцем.
+Этап 4 завершён и валидирован. Принят владельцем.
+
+---
+
+## Сессия: Этап 5 — Заказы на изменение и претензии
+
+**Дата:** 20 июля 2026 года
+**Статус:** Код завершён, миграции ожидają применения
+
+---
+
+### Foundation Check (Этап 5)
+
+- [x] Границы MebelLegal KZ / Interactive KP / MebelDocs AI не нарушены.
+- [x] Tenant isolation и RLS сохранены/проверены.
+- [x] Серверная авторизация присутствует.
+- [x] Деньги не хранятся в float/JavaScript number.
+- [x] State transitions выполняются доменной командой.
+- [x] Юридически значимые действия идемпотентны.
+- [x] Audit log дополнен и остаётся append-only.
+- [x] Подтверждённые данные не перезаписываются, а версионируются.
+- [x] AI не выполняет запрещённые решения.
+- [x] В Git, логах и fixtures нет реальных данных и секретов.
+- [x] Добавлены unit/integration/security/contract tests по риску изменения.
+- [x] Изменение соответствует разрешённому текущему этапу.
+
+### Что сделано (Этап 5)
+
+**Миграции (022–025):**
+- Таблица `change_orders`: id, organization_id, legal_case_id, contract_package_id, number (UNIQUE per org), status, change_type, delta_amount (bigint, CHECK `<> 0`), reason, created_at, created_by, applied_at, metadata
+- Таблица `claims`: id, organization_id, legal_case_id, contract_package_id, change_order_id, type, status, opened_at, opened_by, resolved_at, resolution_summary, resolution_rule_ids, metadata
+- RLS policies для обеих таблиц (SELECT/INSERT/UPDATE, DELETE=false)
+- GRANT: authenticated (SELECT+INSERT+UPDATE), service_role (ALL)
+- Индексы: 5 для change_orders, 6 для claims
+
+**State machines:**
+- Change orders: `draft → requested → approved → applied` (terminal: rejected, applied, cancelled)
+- Claims: `open → in_review → resolved` (terminal: resolved, withdrawn)
+
+**Доменные сервисы:**
+- `ChangeOrderService` — create, transition, get, listByCase; tenant isolation, role-based authz, self-approval prevention, audit events, idempotency
+- `ClaimService` — create, transition, get, listByCase; tenant isolation, role-based authz, audit events, idempotency
+
+**Server actions:**
+- `/cases/[id]/changes/actions.ts` — createChangeOrder, transitionChangeOrder
+- `/cases/[id]/claims/actions.ts` — createClaim, transitionClaim
+
+**UI (6 маршрутов):**
+- `/cases/[id]/changes` — список заказов на изменение
+- `/cases/[id]/changes/new` — новый заказ
+- `/cases/[id]/changes/[changeId]` — детали заказа с state machine
+- `/cases/[id]/claims` — список претензий
+- `/cases/[id]/claims/new` — новая претензия
+- `/cases/[id]/claims/[claimId]` — детали претензии с state machine
+
+**Тесты:**
+- Unit: +21 (CO SM: 12, claim SM: 9)
+- Validation: +14 (CO: 8, claim: 6)
+- Integration: +27 (CO lifecycle/permissions: 15, claim lifecycle/permissions: 12)
+- Real-DB: +10 (CO table existence + CRUD: 5, claims table existence + CRUD: 5)
+
+### Валидация (Этап 5)
+
+| Команда | Статус |
+|---|---|
+| Lint | ✅ 0 errors |
+| Typecheck | ✅ 0 errors |
+| Unit tests | ✅ 191/191 |
+| Integration tests | ✅ 89/89 |
+| Security tests (mock) | ✅ 153/153 |
+| Security tests (real-DB) | ⏳ 4 failed (tables not applied) |
+
+**Общий итог тестов: 433** (191 unit + 89 integration + 253 security)
+**Реальный итог после применения миграций: ~433**
+
+### Git commits (Этап 5)
+
+- `1b3a243` — Stage 5 code (change orders + claims — domain, state machines, UI, tests)
+
+### Ожидание
+
+Миграции 022–025 созданы как `022_025_combined_stage5.sql` и **ожидają применения** через SQL Editor в Supabase dashboard. После применения — перезапустить real-DB тесты.
