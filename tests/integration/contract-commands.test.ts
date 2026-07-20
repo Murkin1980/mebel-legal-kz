@@ -2,14 +2,17 @@ import { describe, it, expect } from 'vitest';
 import {
   TEMPLATE_TRANSITIONS,
   PACKAGE_TRANSITIONS,
+  APPROVAL_TRANSITIONS,
   ROLE_PERMISSIONS,
 } from '@/modules/shared/types';
-import type { ContractTemplateStatus, ContractPackageStatus } from '@/modules/shared/types';
+import type { ContractTemplateStatus, ContractPackageStatus, ApprovalStatus } from '@/modules/shared/types';
 import {
   createContractTemplateSchema,
   createContractPackageSchema,
   transitionContractTemplateStatusSchema,
   transitionContractPackageStatusSchema,
+  createContractApprovalSchema,
+  transitionContractApprovalStatusSchema,
 } from '@/modules/shared/validation';
 
 describe('Contract Templates & Packages Integration', () => {
@@ -215,6 +218,116 @@ describe('Contract Templates & Packages Integration', () => {
       expect(ROLE_PERMISSIONS.view_packages.designer).toBe(true);
       expect(ROLE_PERMISSIONS.view_packages.legal_reviewer).toBe(true);
       expect(ROLE_PERMISSIONS.view_packages.observer).toBe(true);
+    });
+  });
+
+  // ============================================================
+  // Stage 4: Contract Approvals Integration
+  // ============================================================
+
+  describe('approval state machine logic', () => {
+    it('approval lifecycle: draft → pending_review → approved', () => {
+      let status: ApprovalStatus = 'draft';
+
+      expect(APPROVAL_TRANSITIONS[status]).toContain('pending_review');
+      status = 'pending_review';
+
+      expect(APPROVAL_TRANSITIONS[status]).toContain('approved');
+      status = 'approved';
+
+      expect(APPROVAL_TRANSITIONS[status]).toEqual([]);
+    });
+
+    it('approval rejection path: draft → pending_review → rejected', () => {
+      let status: ApprovalStatus = 'draft';
+
+      expect(APPROVAL_TRANSITIONS[status]).toContain('pending_review');
+      status = 'pending_review';
+
+      expect(APPROVAL_TRANSITIONS[status]).toContain('rejected');
+      status = 'rejected';
+
+      expect(APPROVAL_TRANSITIONS[status]).toEqual([]);
+    });
+
+    it('approval revocation from draft: draft → revoked', () => {
+      let status: ApprovalStatus = 'draft';
+      expect(APPROVAL_TRANSITIONS[status]).toContain('revoked');
+      status = 'revoked';
+      expect(APPROVAL_TRANSITIONS[status]).toEqual([]);
+    });
+
+    it('approval revocation from review: draft → pending_review → revoked', () => {
+      let status: ApprovalStatus = 'draft';
+
+      expect(APPROVAL_TRANSITIONS[status]).toContain('pending_review');
+      status = 'pending_review';
+
+      expect(APPROVAL_TRANSITIONS[status]).toContain('revoked');
+      status = 'revoked';
+
+      expect(APPROVAL_TRANSITIONS[status]).toEqual([]);
+    });
+
+    it('approval cannot skip to approved from draft', () => {
+      expect(APPROVAL_TRANSITIONS.draft).not.toContain('approved');
+    });
+
+    it('approval cannot go backwards from approved', () => {
+      expect(APPROVAL_TRANSITIONS.approved).toEqual([]);
+    });
+  });
+
+  describe('approval validation schemas', () => {
+    it('createContractApprovalSchema validates correct input', () => {
+      const result = createContractApprovalSchema.safeParse({
+        legalCaseId: '11111111-1111-1111-1111-111111111111',
+        contractPackageId: '22222222-2222-2222-2222-222222222222',
+        notes: 'Согласование пакета v1',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('transitionContractApprovalStatusSchema validates correct input', () => {
+      const result = transitionContractApprovalStatusSchema.safeParse({
+        approvalId: '11111111-1111-1111-1111-111111111111',
+        targetStatus: 'pending_review',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('transitionContractApprovalStatusSchema rejects invalid status', () => {
+      const result = transitionContractApprovalStatusSchema.safeParse({
+        approvalId: '11111111-1111-1111-1111-111111111111',
+        targetStatus: 'invalid_status',
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('approval role permissions', () => {
+    it('owner and manager can manage approvals (create, revoke)', () => {
+      expect(ROLE_PERMISSIONS.manage_approvals.owner).toBe(true);
+      expect(ROLE_PERMISSIONS.manage_approvals.manager).toBe(true);
+      expect(ROLE_PERMISSIONS.manage_approvals.designer).toBe(false);
+      expect(ROLE_PERMISSIONS.manage_approvals.legal_reviewer).toBe(false);
+      expect(ROLE_PERMISSIONS.manage_approvals.observer).toBe(false);
+    });
+
+    it('owner and legal_reviewer can decide approvals (approve, reject)', () => {
+      expect(ROLE_PERMISSIONS.decide_approvals.owner).toBe(true);
+      expect(ROLE_PERMISSIONS.decide_approvals.legal_reviewer).toBe(true);
+      expect(ROLE_PERMISSIONS.decide_approvals.manager).toBe(false);
+      expect(ROLE_PERMISSIONS.decide_approvals.designer).toBe(false);
+      expect(ROLE_PERMISSIONS.decide_approvals.observer).toBe(false);
+    });
+
+    it('all roles can view approvals', () => {
+      expect(ROLE_PERMISSIONS.view_approvals.owner).toBe(true);
+      expect(ROLE_PERMISSIONS.view_approvals.manager).toBe(true);
+      expect(ROLE_PERMISSIONS.view_approvals.designer).toBe(true);
+      expect(ROLE_PERMISSIONS.view_approvals.legal_reviewer).toBe(true);
+      expect(ROLE_PERMISSIONS.view_approvals.observer).toBe(true);
     });
   });
 });

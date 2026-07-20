@@ -29,6 +29,9 @@ export default function AppLayout({
               <Link href="/app/templates" className="text-gray-600 hover:text-gray-900">
                 Шаблоны
               </Link>
+              <Link href="/app/approvals" className="text-gray-600 hover:text-gray-900">
+                Согласования
+              </Link>
               <Link href="/app/legal/sources" className="text-gray-600 hover:text-gray-900">
                 Источники
               </Link>
@@ -45,7 +48,7 @@ export default function AppLayout({
       <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
           <p className="text-sm text-amber-800">
-            <strong>Этап 3.</strong> Шаблоны и пакеты договоров. Шаблоны создаются вручную. AI/LLM не подключены. Пакеты внутренние.
+            <strong>Этап 4.</strong> Согласование договорных пакетов. Юридически значимая фиксация решений. AI/LLM не подключены.
           </p>
         </div>
         {children}

@@ -209,3 +209,27 @@ export const transitionContractPackageStatusSchema = z.object({
 });
 
 export type TransitionContractPackageStatusInput = z.infer<typeof transitionContractPackageStatusSchema>;
+
+// ============================================================
+// Stage 4: Contract Approval commands
+// ============================================================
+
+export const approvalStatusSchema = z.enum(['draft', 'pending_review', 'approved', 'rejected', 'revoked']);
+
+// Create Contract Approval command
+export const createContractApprovalSchema = z.object({
+  legalCaseId: uuidSchema,
+  contractPackageId: uuidSchema,
+  notes: z.string().max(2000).optional(),
+});
+
+export type CreateContractApprovalInput = z.infer<typeof createContractApprovalSchema>;
+
+// Transition Contract Approval Status command
+export const transitionContractApprovalStatusSchema = z.object({
+  approvalId: uuidSchema,
+  targetStatus: approvalStatusSchema,
+  notes: z.string().max(2000).optional(),
+});
+
+export type TransitionContractApprovalStatusInput = z.infer<typeof transitionContractApprovalStatusSchema>;

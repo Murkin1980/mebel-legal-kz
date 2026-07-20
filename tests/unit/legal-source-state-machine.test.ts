@@ -5,6 +5,7 @@ import {
   LEGAL_RULE_TRANSITIONS,
   TEMPLATE_TRANSITIONS,
   PACKAGE_TRANSITIONS,
+  APPROVAL_TRANSITIONS,
 } from '@/modules/shared/types';
 import type {
   LegalSourceStatus,
@@ -12,6 +13,7 @@ import type {
   LegalRuleStatus,
   ContractTemplateStatus,
   ContractPackageStatus,
+  ApprovalStatus,
 } from '@/modules/shared/types';
 
 describe('Legal Source State Machine', () => {
@@ -273,5 +275,104 @@ describe('Contract Package Complete Lifecycle', () => {
     for (const status of statuses) {
       expect(PACKAGE_TRANSITIONS[status]).toContain('retired');
     }
+  });
+});
+
+// ============================================================
+// Stage 4: Contract Approval State Machine
+// ============================================================
+
+describe('Contract Approval State Machine', () => {
+  describe('approval transitions', () => {
+    it('draft can transition to pending_review', () => {
+      expect(APPROVAL_TRANSITIONS.draft).toContain('pending_review');
+    });
+
+    it('draft can transition to revoked', () => {
+      expect(APPROVAL_TRANSITIONS.draft).toContain('revoked');
+    });
+
+    it('pending_review can transition to approved', () => {
+      expect(APPROVAL_TRANSITIONS.pending_review).toContain('approved');
+    });
+
+    it('pending_review can transition to rejected', () => {
+      expect(APPROVAL_TRANSITIONS.pending_review).toContain('rejected');
+    });
+
+    it('pending_review can transition to revoked', () => {
+      expect(APPROVAL_TRANSITIONS.pending_review).toContain('revoked');
+    });
+
+    it('approved cannot transition', () => {
+      expect(APPROVAL_TRANSITIONS.approved).toEqual([]);
+    });
+
+    it('rejected cannot transition', () => {
+      expect(APPROVAL_TRANSITIONS.rejected).toEqual([]);
+    });
+
+    it('revoked cannot transition', () => {
+      expect(APPROVAL_TRANSITIONS.revoked).toEqual([]);
+    });
+
+    it('draft cannot transition to approved directly', () => {
+      expect(APPROVAL_TRANSITIONS.draft).not.toContain('approved');
+    });
+
+    it('draft cannot transition to rejected directly', () => {
+      expect(APPROVAL_TRANSITIONS.draft).not.toContain('rejected');
+    });
+
+    it('pending_review cannot transition to draft', () => {
+      expect(APPROVAL_TRANSITIONS.pending_review).not.toContain('draft');
+    });
+  });
+});
+
+describe('Contract Approval Complete Lifecycle', () => {
+  it('should follow: draft → pending_review → approved', () => {
+    let status: ApprovalStatus = 'draft';
+
+    expect(APPROVAL_TRANSITIONS[status]).toContain('pending_review');
+    status = 'pending_review';
+
+    expect(APPROVAL_TRANSITIONS[status]).toContain('approved');
+    status = 'approved';
+
+    expect(APPROVAL_TRANSITIONS[status]).toEqual([]);
+  });
+
+  it('should follow rejection path: draft → pending_review → rejected', () => {
+    let status: ApprovalStatus = 'draft';
+
+    expect(APPROVAL_TRANSITIONS[status]).toContain('pending_review');
+    status = 'pending_review';
+
+    expect(APPROVAL_TRANSITIONS[status]).toContain('rejected');
+    status = 'rejected';
+
+    expect(APPROVAL_TRANSITIONS[status]).toEqual([]);
+  });
+
+  it('should follow revocation from draft: draft → revoked', () => {
+    let status: ApprovalStatus = 'draft';
+
+    expect(APPROVAL_TRANSITIONS[status]).toContain('revoked');
+    status = 'revoked';
+
+    expect(APPROVAL_TRANSITIONS[status]).toEqual([]);
+  });
+
+  it('should follow revocation from review: draft → pending_review → revoked', () => {
+    let status: ApprovalStatus = 'draft';
+
+    expect(APPROVAL_TRANSITIONS[status]).toContain('pending_review');
+    status = 'pending_review';
+
+    expect(APPROVAL_TRANSITIONS[status]).toContain('revoked');
+    status = 'revoked';
+
+    expect(APPROVAL_TRANSITIONS[status]).toEqual([]);
   });
 });

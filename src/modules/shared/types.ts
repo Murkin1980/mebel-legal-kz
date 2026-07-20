@@ -41,6 +41,9 @@ export type ContractPackageStatus =
   | 'published_for_consultation'
   | 'retired';
 
+// Stage 4: Contract Approvals
+export type ApprovalStatus = 'draft' | 'pending_review' | 'approved' | 'rejected' | 'revoked';
+
 export interface Organization {
   id: string;
   name: string;
@@ -164,6 +167,21 @@ export interface ContractPackage {
   created_by: string;
 }
 
+// Stage 4: Contract Approval
+export interface ContractApproval {
+  id: string;
+  organization_id: string;
+  legal_case_id: string;
+  contract_package_id: string;
+  status: ApprovalStatus;
+  requested_by: string;
+  decided_by: string | null;
+  decided_at: string | null;
+  notes: string | null;
+  created_at: string;
+  created_by: string;
+}
+
 /**
  * Allowed state transitions for legal cases
  */
@@ -225,6 +243,17 @@ export const PACKAGE_TRANSITIONS: Record<ContractPackageStatus, ContractPackageS
   approved_for_internal_use: ['published_for_consultation', 'retired'],
   published_for_consultation: ['retired'],
   retired: [],
+};
+
+/**
+ * Allowed state transitions for contract approvals
+ */
+export const APPROVAL_TRANSITIONS: Record<ApprovalStatus, ApprovalStatus[]> = {
+  draft: ['pending_review', 'revoked'],
+  pending_review: ['approved', 'rejected', 'revoked'],
+  approved: [],
+  rejected: [],
+  revoked: [],
 };
 
 /**
@@ -367,6 +396,28 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     observer: false,
   },
   view_packages: {
+    owner: true,
+    manager: true,
+    designer: true,
+    legal_reviewer: true,
+    observer: true,
+  },
+  // Stage 4: Contract Approvals permissions
+  manage_approvals: {
+    owner: true,
+    manager: true,
+    designer: false,
+    legal_reviewer: false,
+    observer: false,
+  },
+  decide_approvals: {
+    owner: true,
+    manager: false,
+    designer: false,
+    legal_reviewer: true,
+    observer: false,
+  },
+  view_approvals: {
     owner: true,
     manager: true,
     designer: true,

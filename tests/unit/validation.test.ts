@@ -8,6 +8,8 @@ import {
   transitionContractTemplateStatusSchema,
   createContractPackageSchema,
   transitionContractPackageStatusSchema,
+  createContractApprovalSchema,
+  transitionContractApprovalStatusSchema,
 } from '@/modules/shared/validation';
 
 describe('Validation Schemas', () => {
@@ -292,6 +294,80 @@ describe('Validation Schemas', () => {
         packageId: '11111111-1111-1111-1111-111111111111',
         legalCaseId: '22222222-2222-2222-2222-222222222222',
         targetStatus: 'invalid',
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  // ============================================================
+  // Stage 4: Contract Approval schemas
+  // ============================================================
+
+  describe('createContractApprovalSchema', () => {
+    it('should accept valid input', () => {
+      const result = createContractApprovalSchema.safeParse({
+        legalCaseId: '11111111-1111-1111-1111-111111111111',
+        contractPackageId: '22222222-2222-2222-2222-222222222222',
+        notes: 'Запрос согласования',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('should accept without notes', () => {
+      const result = createContractApprovalSchema.safeParse({
+        legalCaseId: '11111111-1111-1111-1111-111111111111',
+        contractPackageId: '22222222-2222-2222-2222-222222222222',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject invalid legalCaseId', () => {
+      const result = createContractApprovalSchema.safeParse({
+        legalCaseId: 'not-a-uuid',
+        contractPackageId: '22222222-2222-2222-2222-222222222222',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('should reject invalid contractPackageId', () => {
+      const result = createContractApprovalSchema.safeParse({
+        legalCaseId: '11111111-1111-1111-1111-111111111111',
+        contractPackageId: 'not-a-uuid',
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('transitionContractApprovalStatusSchema', () => {
+    it('should accept valid transition', () => {
+      const result = transitionContractApprovalStatusSchema.safeParse({
+        approvalId: '11111111-1111-1111-1111-111111111111',
+        targetStatus: 'pending_review',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('should accept with notes', () => {
+      const result = transitionContractApprovalStatusSchema.safeParse({
+        approvalId: '11111111-1111-1111-1111-111111111111',
+        targetStatus: 'rejected',
+        notes: 'Не соответствует требованиям',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject invalid status', () => {
+      const result = transitionContractApprovalStatusSchema.safeParse({
+        approvalId: '11111111-1111-1111-1111-111111111111',
+        targetStatus: 'invalid',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('should reject invalid approvalId', () => {
+      const result = transitionContractApprovalStatusSchema.safeParse({
+        approvalId: 'not-a-uuid',
+        targetStatus: 'approved',
       });
       expect(result.success).toBe(false);
     });

@@ -63,6 +63,11 @@ describe('Real-DB: Table Existence Check', () => {
     const exists = await tableExists('contract_packages');
     expect(exists).toBe(true);
   });
+
+  it('contract_approvals table exists in database', async () => {
+    const exists = await tableExists('contract_approvals');
+    expect(exists).toBe(true);
+  });
 });
 
 describe('Real-DB: Service Role CRUD (bypasses RLS)', () => {
@@ -394,5 +399,142 @@ describe('Real-DB: RLS Enforcement', () => {
 
     expect(error).toBeNull();
     expect(Array.isArray(data)).toBe(true);
+  });
+});
+
+describe('Real-DB: Stage 4 - Contract Approvals CRUD', () => {
+  let approvalId: string;
+  let packageId: string;
+  let caseId: string;
+
+  beforeAll(async () => {
+    // Create test case
+    const { data: caseData } = await admin
+      .from('legal_cases')
+      .upsert({
+        organization_id: TEST_ORG_ID,
+        case_number: 'LC-999902',
+        title: 'Real-DB Approval Test Case',
+        customer_type: 'individual',
+        customer_display_name: 'Тестовый клиент для согласования',
+        project_type: 'manufacture_only',
+        status: 'draft',
+        currency: 'KZT',
+        source_type: 'manual',
+        version: 1,
+        created_by: TEST_USER_ID || '00000000-0000-0000-0000-000000000000',
+      })
+      .select('id')
+      .single();
+
+    caseId = caseData?.id || '';
+
+    // Create test package
+    if (caseId) {
+      const { data: pkgData } = await admin
+        .from('contract_packages')
+        .insert({
+          legal_case_id: caseId,
+          template_code: 'REALDB-TPL-002',
+          version: 1,
+          status: 'draft',
+          content_snapshot: { amount: '5000000' },
+          source_revision_ids: [],
+          created_by: TEST_USER_ID || '00000000-0000-0000-0000-000000000000',
+        })
+        .select('id')
+        .single();
+
+      packageId = pkgData?.id || '';
+    }
+  });
+
+  afterAll(async () => {
+    if (approvalId) await admin.from('contract_approvals').delete().eq('id', approvalId);
+    if (packageId) await admin.from('contract_packages').delete().eq('id', packageId);
+    if (caseId) await admin.from('legal_cases').delete().eq('id', caseId);
+  });
+
+  it('can SELECT from contract_approvals with service role', async () => {
+    const { error } = await admin
+      .from('contract_approvals')
+      .select('id')
+      .limit(1);
+    expect(error).toBeNull();
+  });
+
+  it('can INSERT into contract_approvals', async () => {
+    if (!caseId || !packageId) {
+      console.log('Skipping: case or package not created');
+      return;
+    }
+    const userId = await getTestUserId();
+    const { data, error } = await admin
+      .from('contract_approvals')
+      .insert({
+        organization_id: TEST_ORG_ID,
+        legal_case_id: caseId,
+        contract_package_id: packageId,
+        status: 'draft',
+        requested_by: userId,
+        notes: 'Тестовое согласование',
+        created_by: userId,
+      })
+      .select('id')
+      .single();
+
+    expect(error).toBeNull();
+    expect(data?.id).toBeDefined();
+    approvalId = data!.id;
+  });
+
+  it('can UPDATE contract_approvals status', async () => {
+    if (!approvalId) {
+      console.log('Skipping: approval not created');
+      return;
+    }
+    const { error } = await admin
+      .from('contract_approvals')
+      .update({
+        status: 'pending_review',
+      })
+      .eq('id', approvalId);
+
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('contract_approvals')
+      .select('status')
+      .eq('id', approvalId)
+      .single();
+
+    expect(data?.status).toBe('pending_review');
+  });
+
+  it('can UPDATE contract_approvals to terminal state with decided_by', async () => {
+    if (!approvalId) {
+      console.log('Skipping: approval not created');
+      return;
+    }
+    const userId = await getTestUserId();
+    const { error } = await admin
+      .from('contract_approvals')
+      .update({
+        status: 'approved',
+        decided_by: userId,
+        decided_at: new Date().toISOString(),
+      })
+      .eq('id', approvalId);
+
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('contract_approvals')
+      .select('status, decided_by')
+      .eq('id', approvalId)
+      .single();
+
+    expect(data?.status).toBe('approved');
+    expect(data?.decided_by).toBe(userId);
   });
 });
