@@ -698,3 +698,18 @@ npm run cf:deploy      # Deploy на Cloudflare Workers
 - Нет реальных договоров и персональных данных
 - R2 bucket опционален (проект не использует ISR, но настроен для будущего)
 - Windows warning — OpenNext рекомендует WSL для продакшена
+- **Webpack required** — `package.json` использует `next build --webpack` т.к. OpenNext v1.20.1 не бандлит Turbopack SSR-чанки корректно на Workers
+- **Non-ASCII paths** — все build/deploy команды запускать только из ASCII-директорий
+
+### Решённые проблемы деплоя
+
+**500 Internal Server Error → ChunkLoadError**
+- **Симптом**: Worker деплоился, но возвращал 500. В логах: `ChunkLoadError: Failed to load chunk server/chunks/ssr/[root-of-the-server]__0ba6p-0._.js`
+- **Причина**: Next.js 16 по умолчанию использует Turbopack. OpenNext v1.20.1 не поддерживает Turbopack SSR-чанки — они не попадают в бандл воркера
+- **Решение**: `"build": "next build --webpack"` в package.json
+- **Коммит**: TBD
+
+**Non-ASCII path breakage**
+- **Симптом**: `wrangler dev`, `wrangler deploy`, PowerShell cmdlets падали с ошибками файлового доступа
+- **Причина**: Кириллица в пути `C:\Users\Мурат\OneDrive\Documents\Mебел legal KZ\...`
+- **Решение**: Перенос проекта в `C:\work\mebel-legal-kz`. Добавлен env constraint в AGENTS.md

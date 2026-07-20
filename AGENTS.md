@@ -103,6 +103,21 @@ npm run build
 
 ---
 
+### Environment constraint
+
+**Never use a working directory or file path containing Cyrillic or other non-ASCII characters.**
+
+If the current project path contains non-ASCII characters, **stop immediately** and instruct the user to move the repo to an ASCII-only path (e.g. `C:\work\mebel-legal-kz`) before continuing.
+
+All automation scripts, CLI wrappers, and coding agents must run only from ASCII-safe directories. Non-ASCII paths break:
+- `wrangler dev` / `wrangler deploy`
+- `opennextjs-cloudflare build`
+- PowerShell `Select-String`, `Get-ChildItem -LiteralPath`
+- `robocopy` and other Windows CLI tools
+- Node.js `require()` / `import()` resolution
+
+---
+
 ## Working Agreement for coder (Coder Bounded Execution Rule)
 
 Обязательно для исполнения на каждом этапе.

@@ -9,6 +9,8 @@
 - Server Actions, App Router, all dynamic routes supported
 - `@cloudflare/next-on-pages` is deprecated — OpenNext is the recommended path
 
+**Staging URL**: `https://mebel-legal-kz.muriktl.workers.dev`
+
 ## Prerequisites
 
 - Node.js >= 18
@@ -151,6 +153,8 @@ After deployment, verify manually:
 - **R2 bucket required** — must be created before first deploy (for incremental cache)
 - **Windows warning** — OpenNext warns about Windows; builds succeed but WSL recommended for production
 - **Service role key** — only used server-side in `createServiceClient()`, never exposed to browser
+- **Webpack required** — `package.json` uses `next build --webpack` because OpenNext v1.20.1 does not bundle Turbopack SSR chunks correctly on Workers. Turbopack support may arrive in a future OpenNext release.
+- **Non-ASCII paths** — all build/deploy commands must run from ASCII-only directories. Cyrillic in paths breaks wrangler, OpenNext, and PowerShell CLI tools.
 
 ## Risks
 
