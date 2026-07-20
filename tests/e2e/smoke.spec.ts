@@ -1,232 +1,202 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { chromium, type Browser, type Page } from 'playwright';
+import { test, expect, type Page } from '@playwright/test';
 
 /**
  * E2E Smoke Tests for MebelLegal KZ - Stage 1.5
  *
  * Tests critical user path:
- * Login → Organization → Case List → Create Case → Update Case → Status Transition → Audit Log
+ * Login → Organization → Case List → Create Case → Case Detail → Audit Log
  *
  * Uses synthetic data only. No real data.
  */
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+test.describe('Login Page', () => {
+  test('should render login form', async ({ page }) => {
+    await page.goto('/login');
 
-describe('E2E Smoke Tests', () => {
-  let browser: Browser;
-  let page: Page;
+    const emailInput = page.locator('input[type="email"]');
+    const passwordInput = page.locator('input[type="password"]');
+    const submitButton = page.locator('button[type="submit"]');
 
-  beforeAll(async () => {
-    browser = await chromium.launch({ headless: true });
-    page = await browser.newPage();
+    await expect(emailInput).toBeVisible();
+    await expect(passwordInput).toBeVisible();
+    await expect(submitButton).toBeVisible();
   });
 
-  afterAll(async () => {
-    await browser.close();
+  test('should have proper heading hierarchy', async ({ page }) => {
+    await page.goto('/login');
+
+    const h1 = page.locator('h1');
+    await expect(h1).toBeVisible();
+    await expect(h1).toHaveText(/MebelLegal KZ/);
   });
 
-  describe('Login Page', () => {
-    it('should render login form', async () => {
-      await page.goto(`${BASE_URL}/login`);
+  test('should have accessible form labels', async ({ page }) => {
+    await page.goto('/login');
 
-      const emailInput = page.locator('input[type="email"]');
-      const passwordInput = page.locator('input[type="password"]');
-      const submitButton = page.locator('button[type="submit"]');
+    const emailLabel = page.locator('label[for="email"]');
+    const passwordLabel = page.locator('label[for="password"]');
 
-      await expect(emailInput).toBeVisible();
-      await expect(passwordInput).toBeVisible();
-      await expect(submitButton).toBeVisible();
-    });
-
-    it('should have proper heading hierarchy', async () => {
-      await page.goto(`${BASE_URL}/login`);
-
-      const h1 = page.locator('h1');
-      await expect(h1).toBeVisible();
-      await expect(h1).toHaveText(/MebelLegal KZ/);
-    });
-
-    it('should have accessible form labels', async () => {
-      await page.goto(`${BASE_URL}/login`);
-
-      const emailLabel = page.locator('label[for="email"]');
-      const passwordLabel = page.locator('label[for="password"]');
-
-      await expect(emailLabel).toBeVisible();
-      await expect(passwordLabel).toBeVisible();
-    });
-
-    it('should show stage 1 warning', async () => {
-      await page.goto(`${BASE_URL}/login`);
-
-      const warning = page.locator('text=Этап 1');
-      await expect(warning).toBeVisible();
-    });
+    await expect(emailLabel).toBeVisible();
+    await expect(passwordLabel).toBeVisible();
   });
 
-  describe('App Layout', () => {
-    it('should have navigation links', async () => {
-      await page.goto(`${BASE_URL}/app`);
+  test('should show stage 1 warning', async ({ page }) => {
+    await page.goto('/login');
 
-      const casesLink = page.locator('a[href="/app/cases"]');
-      const auditLink = page.locator('a[href="/app/audit"]');
+    const warning = page.locator('text=Этап 1');
+    await expect(warning).toBeVisible();
+  });
+});
 
-      await expect(casesLink).toBeVisible();
-      await expect(auditLink).toBeVisible();
-    });
+test.describe('App Layout', () => {
+  test('should have navigation links', async ({ page }) => {
+    await page.goto('/app');
 
-    it('should show stage 1 banner', async () => {
-      await page.goto(`${BASE_URL}/app`);
+    const casesLink = page.locator('a[href="/app/cases"]');
+    const auditLink = page.locator('a[href="/app/audit"]');
 
-      const banner = page.locator('text=Юридические документы и проверка законодательства ещё не подключены');
-      await expect(banner).toBeVisible();
-    });
+    await expect(casesLink).toBeVisible();
+    await expect(auditLink).toBeVisible();
   });
 
-  describe('Case List Page', () => {
-    it('should render case list with filters', async () => {
-      await page.goto(`${BASE_URL}/app/cases`);
+  test('should show stage 1 banner', async ({ page }) => {
+    await page.goto('/app');
 
-      const searchInput = page.locator('input[type="search"]');
-      const statusFilter = page.locator('select[aria-label="Фильтр по статусу"]');
-      const customerTypeFilter = page.locator('select[aria-label="Фильтр по типу клиента"]');
-      const projectTypeFilter = page.locator('select[aria-label="Фильтр по типу проекта"]');
+    const banner = page.locator('text=Юридические документы и проверка законодательства ещё не подключены');
+    await expect(banner).toBeVisible();
+  });
+});
 
-      await expect(searchInput).toBeVisible();
-      await expect(statusFilter).toBeVisible();
-      await expect(customerTypeFilter).toBeVisible();
-      await expect(projectTypeFilter).toBeVisible();
-    });
+test.describe('Case List Page', () => {
+  test('should render case list with filters', async ({ page }) => {
+    await page.goto('/app/cases');
 
-    it('should have sortable column headers', async () => {
-      await page.goto(`${BASE_URL}/app/cases`);
+    const searchInput = page.locator('input[type="search"]');
+    const statusFilter = page.locator('select[aria-label="Фильтр по статусу"]');
+    const customerTypeFilter = page.locator('select[aria-label="Фильтр по типу клиента"]');
+    const projectTypeFilter = page.locator('select[aria-label="Фильтр по типу проекта"]');
 
-      const sortButtons = page.locator('button[aria-label^="Сортировать"]');
-      const count = await sortButtons.count();
-      expect(count).toBeGreaterThanOrEqual(4);
-    });
-
-    it('should show empty state when no cases', async () => {
-      await page.goto(`${BASE_URL}/app/cases`);
-
-      const emptyState = page.locator('text=Нет кейсов');
-      const caseTable = page.locator('table');
-
-      const hasEmptyState = await emptyState.isVisible().catch(() => false);
-      const hasTable = await caseTable.isVisible().catch(() => false);
-
-      expect(hasEmptyState || hasTable).toBe(true);
-    });
+    await expect(searchInput).toBeVisible();
+    await expect(statusFilter).toBeVisible();
+    await expect(customerTypeFilter).toBeVisible();
+    await expect(projectTypeFilter).toBeVisible();
   });
 
-  describe('Create Case Page', () => {
-    it('should render case creation form', async () => {
-      await page.goto(`${BASE_URL}/app/cases/new`);
+  test('should have sortable column headers', async ({ page }) => {
+    await page.goto('/app/cases');
 
-      const caseNumberInput = page.locator('#caseNumber');
-      const titleInput = page.locator('#title');
-      const customerTypeSelect = page.locator('#customerType');
-      const customerNameInput = page.locator('#customerDisplayName');
-      const projectTypeSelect = page.locator('#projectType');
-      const amountInput = page.locator('#totalAmount');
-      const submitButton = page.locator('button[type="submit"]');
-
-      await expect(caseNumberInput).toBeVisible();
-      await expect(titleInput).toBeVisible();
-      await expect(customerTypeSelect).toBeVisible();
-      await expect(customerNameInput).toBeVisible();
-      await expect(projectTypeSelect).toBeVisible();
-      await expect(amountInput).toBeVisible();
-      await expect(submitButton).toBeVisible();
-    });
-
-    it('should have proper form labels', async () => {
-      await page.goto(`${BASE_URL}/app/cases/new`);
-
-      const labels = page.locator('label');
-      const count = await labels.count();
-      expect(count).toBeGreaterThanOrEqual(5);
-    });
-
-    it('should have required field indicators', async () => {
-      await page.goto(`${BASE_URL}/app/cases/new`);
-
-      const requiredIndicators = page.locator('span.text-red-500');
-      const count = await requiredIndicators.count();
-      expect(count).toBeGreaterThanOrEqual(4);
-    });
-
-    it('should have back navigation', async () => {
-      await page.goto(`${BASE_URL}/app/cases/new`);
-
-      const backButton = page.locator('button:has-text("Назад")');
-      await expect(backButton).toBeVisible();
-    });
+    const sortButtons = page.locator('button[aria-label^="Сортировать"]');
+    const count = await sortButtons.count();
+    expect(count).toBeGreaterThanOrEqual(4);
   });
 
-  describe('Audit Page', () => {
-    it('should render audit log with filters', async () => {
-      await page.goto(`${BASE_URL}/app/audit`);
+  test('should show empty state or table', async ({ page }) => {
+    await page.goto('/app/cases');
 
-      const eventTypeFilter = page.locator('select[aria-label="Фильтр по типу события"]');
-      const entityTypeFilter = page.locator('select[aria-label="Фильтр по типу сущности"]');
-      const dateFrom = page.locator('input[aria-label="Дата от"]');
-      const dateTo = page.locator('input[aria-label="Дата до"]');
+    const emptyState = page.locator('text=Нет кейсов');
+    const caseTable = page.locator('table');
 
-      await expect(eventTypeFilter).toBeVisible();
-      await expect(entityTypeFilter).toBeVisible();
-      await expect(dateFrom).toBeVisible();
-      await expect(dateTo).toBeVisible();
-    });
+    const hasEmptyState = await emptyState.isVisible().catch(() => false);
+    const hasTable = await caseTable.isVisible().catch(() => false);
 
-    it('should show read-only notice', async () => {
-      await page.goto(`${BASE_URL}/app/audit`);
+    expect(hasEmptyState || hasTable).toBe(true);
+  });
+});
 
-      const notice = page.locator('text=Только чтение');
-      await expect(notice).toBeVisible();
-    });
+test.describe('Create Case Page', () => {
+  test('should render case creation form', async ({ page }) => {
+    await page.goto('/app/cases/new');
 
-    it('should show append-only notice', async () => {
-      await page.goto(`${BASE_URL}/app/audit`);
-
-      const notice = page.locator('text=История дополнена и не может быть изменена');
-      await expect(notice).toBeVisible();
-    });
+    await expect(page.locator('#caseNumber')).toBeVisible();
+    await expect(page.locator('#title')).toBeVisible();
+    await expect(page.locator('#customerType')).toBeVisible();
+    await expect(page.locator('#customerDisplayName')).toBeVisible();
+    await expect(page.locator('#projectType')).toBeVisible();
+    await expect(page.locator('#totalAmount')).toBeVisible();
+    await expect(page.locator('button[type="submit"]')).toBeVisible();
   });
 
-  describe('Keyboard Navigation', () => {
-    it('should allow tab navigation on login page', async () => {
-      await page.goto(`${BASE_URL}/login`);
+  test('should have proper form labels', async ({ page }) => {
+    await page.goto('/app/cases/new');
 
-      await page.keyboard.press('Tab');
-      const focused = await page.evaluate(() => document.activeElement?.tagName);
-      expect(['INPUT', 'BUTTON', 'A']).toContain(focused);
-    });
-
-    it('should allow tab navigation on cases page', async () => {
-      await page.goto(`${BASE_URL}/app/cases`);
-
-      await page.keyboard.press('Tab');
-      const focused = await page.evaluate(() => document.activeElement?.tagName);
-      expect(['INPUT', 'SELECT', 'BUTTON', 'A']).toContain(focused);
-    });
+    const labels = page.locator('label');
+    const count = await labels.count();
+    expect(count).toBeGreaterThanOrEqual(5);
   });
 
-  describe('Focus Visibility', () => {
-    it('should show focus ring on interactive elements', async () => {
-      await page.goto(`${BASE_URL}/login`);
+  test('should have required field indicators', async ({ page }) => {
+    await page.goto('/app/cases/new');
 
-      const emailInput = page.locator('input[type="email"]');
-      await emailInput.focus();
+    const requiredIndicators = page.locator('span.text-red-500');
+    const count = await requiredIndicators.count();
+    expect(count).toBeGreaterThanOrEqual(4);
+  });
 
-      const hasFocusRing = await page.evaluate(() => {
-        const el = document.activeElement;
-        if (!el) return false;
-        const styles = window.getComputedStyle(el);
-        return styles.outlineStyle !== 'none' || styles.boxShadow !== 'none';
-      });
+  test('should have back navigation', async ({ page }) => {
+    await page.goto('/app/cases/new');
 
-      expect(hasFocusRing).toBe(true);
+    const backButton = page.locator('button:has-text("Назад")');
+    await expect(backButton).toBeVisible();
+  });
+});
+
+test.describe('Audit Page', () => {
+  test('should render audit log with filters', async ({ page }) => {
+    await page.goto('/app/audit');
+
+    await expect(page.locator('select[aria-label="Фильтр по типу события"]')).toBeVisible();
+    await expect(page.locator('select[aria-label="Фильтр по типу сущности"]')).toBeVisible();
+    await expect(page.locator('input[aria-label="Дата от"]')).toBeVisible();
+    await expect(page.locator('input[aria-label="Дата до"]')).toBeVisible();
+  });
+
+  test('should show read-only notice', async ({ page }) => {
+    await page.goto('/app/audit');
+
+    const notice = page.locator('text=Только чтение');
+    await expect(notice).toBeVisible();
+  });
+
+  test('should show append-only notice', async ({ page }) => {
+    await page.goto('/app/audit');
+
+    const notice = page.locator('text=История дополнена и не может быть изменена');
+    await expect(notice).toBeVisible();
+  });
+});
+
+test.describe('Keyboard Navigation', () => {
+  test('should allow tab navigation on login page', async ({ page }) => {
+    await page.goto('/login');
+
+    await page.keyboard.press('Tab');
+    const focused = await page.evaluate(() => document.activeElement?.tagName);
+    expect(['INPUT', 'BUTTON', 'A']).toContain(focused);
+  });
+
+  test('should allow tab navigation on cases page', async ({ page }) => {
+    await page.goto('/app/cases');
+
+    await page.keyboard.press('Tab');
+    const focused = await page.evaluate(() => document.activeElement?.tagName);
+    expect(['INPUT', 'SELECT', 'BUTTON', 'A']).toContain(focused);
+  });
+});
+
+test.describe('Focus Visibility', () => {
+  test('should show focus ring on interactive elements', async ({ page }) => {
+    await page.goto('/login');
+
+    const emailInput = page.locator('input[type="email"]');
+    await emailInput.focus();
+
+    const hasFocusRing = await page.evaluate(() => {
+      const el = document.activeElement;
+      if (!el) return false;
+      const styles = window.getComputedStyle(el);
+      return styles.outlineStyle !== 'none' || styles.boxShadow !== 'none';
     });
+
+    expect(hasFocusRing).toBe(true);
   });
 });
