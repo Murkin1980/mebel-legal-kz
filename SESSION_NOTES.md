@@ -608,4 +608,93 @@ Real-DB тесты (30 tests) подтверждают:
 
 ### Ожидание
 
-Этап 5 завершён и валидирован. Ожидает финальной приёмки владельцем.
+Этап 5 завершён и валидирован. Принят владельцем.
+
+---
+
+## Сессия: Внутренний деплой на Cloudflare
+
+**Дата:** 20 июля 2026 года
+**Статус:** Конфигурация завершена, build успешен, ожидает Cloudflare Dashboard настройки
+
+---
+
+### Что сделано
+
+- Установлен `@opennextjs/cloudflare` (v1.20.1) + `wrangler` (v4.112.0)
+- Выполнен `opennextjs-cloudflare migrate` — созданы `wrangler.jsonc`, `open-next.config.ts`, `public/_headers`
+- Добавлены скрипты: `cf:build`, `cf:preview`, `cf:deploy`, `preview`, `deploy`, `upload`
+- Добавлен `.open-next/**` в ESLint ignores (build output)
+- `cf:build` успешен — 27 маршрутов, `.open-next/worker.js` сгенерирован
+- Lint: 0 errors | Typecheck: 0 errors | 191 unit tests pass
+
+### Что выбрано для деплоя
+
+**OpenNext on Cloudflare Workers** (`@opennextjs/cloudflare`)
+
+- Поддерживает Next.js 16 с Node.js runtime (полная совместимость)
+- `@cloudflare/next-on-pages` deprecated — OpenNext это official replacement
+- Supabase SSR auth, Server Actions, App Router — всё работает
+
+### Файлы добавлены/изменены
+
+| Файл | Цель |
+|---|---|
+| `wrangler.jsonc` | Cloudflare Worker config — name, compat flags, R2 cache, images |
+| `open-next.config.ts` | OpenNext build config — R2 incremental cache |
+| `public/_headers` | Кэширование статических ассетов |
+| `eslint.config.mjs` | Добавлен `.open-next/**` в ignores |
+| `package.json` | `@opennextjs/cloudflare`, `wrangler`, скрипты деплоя |
+| `docs/deployment/cloudflare-pages.md` | Документация деплоя |
+
+### Команды
+
+```bash
+npm run preview        # Локальный preview (workerd)
+npm run cf:build       # Build для Cloudflare
+npm run cf:deploy      # Deploy на Cloudflare Workers
+```
+
+### Env vars для Cloudflare
+
+| Variable | Public/Server | Required | Notes |
+|---|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Public | Yes | Inlined at build time |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | Yes | Inlined at build time |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only | Yes | `wrangler secret put` — NEVER in browser |
+| `NEXT_PUBLIC_APP_ENV` | Public | Yes | Set to `staging` |
+
+### Настройки Supabase
+
+- Site URL: `https://mebel-legal-kz.<hash>.workers.dev`
+- Redirect URLs: `https://mebel-legal-kz.<hash>.workers.dev/*`
+
+### Cloudflare Dashboard — пошагово
+
+1. R2 → Create bucket: `mebel-legal-kz-opennext-cache`
+2. Workers & Pages → Create → Pages → Connect to Git
+3. Build: `npm run cf:build`, output: `.open-next`, Node: `22`
+4. Settings → Variables: 3 env vars (2 public + 1 secret)
+5. Functions → Compatibility Flags: `nodejs_compat`
+6. Push to `main` → auto-deploy
+
+### Post-deploy smoke checks
+
+1. `/login` → рендерится
+2. Login → `/app`
+3. `/app/cases`, `/app/legal/sources`, `/app/legal/rules`, `/app/templates`, `/app/approvals` → не падают
+4. `/app/cases/[id]/changes`, `/app/cases/[id]/claims` → не падают
+5. Нет client-side ошибок
+6. `SUPABASE_SERVICE_ROLE_KEY` не виден в Network tab
+
+### Rollback
+
+- Cloudflare Dashboard → Deployments → Retry previous
+- Или `git revert <commit>` → push → auto-deploy
+
+### Ограничения
+
+- Только внутреннее использование (без custom domain)
+- Нет реальных договоров и персональных данных
+- R2 bucket обязателен для incremental cache
+- Windows warning — OpenNext рекомендует WSL для продакшена
