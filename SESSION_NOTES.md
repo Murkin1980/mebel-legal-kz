@@ -615,77 +615,105 @@ Real-DB тесты (30 tests) подтверждают:
 ## Сессия: Внутренний деплой на Cloudflare
 
 **Дата:** 20 июля 2026 года
-**Статус:** Конфигурация завершена, build успешен, ожидает Cloudflare Dashboard настройки
+**Статус:** Деплой завершён. Worker работает: `https://mebel-legal-kz.muriktl.workers.dev`. Supabase Site URL настроен. 11/11 smoke checks пройдены.
 
 ---
 
 ### Что сделано
 
-- Установлен `@opennextjs/cloudflare` (v1.20.1) + `wrangler` (v4.112.0)
-- Выполнен `opennextjs-cloudflare migrate` — созданы `wrangler.jsonc`, `open-next.config.ts`, `public/_headers`
-- Добавлены скрипты: `cf:build`, `cf:preview`, `cf:deploy`, `preview`, `deploy`, `upload`
-- Добавлен `.open-next/**` в ESLint ignores (build output)
-- `cf:build` успешен — 27 маршрутов, `.open-next/worker.js` сгенерирован
-- Lint: 0 errors | Typecheck: 0 errors | 191 unit tests pass
+- Установлены `@opennextjs/cloudflare` (v1.20.1) и `wrangler` (v4.112.0).
+- Выполнена миграция `opennextjs-cloudflare migrate` — созданы `wrangler.jsonc`, `open-next.config.ts`, `public/_headers`.
+- Добавлены скрипты `cf:build`, `cf:preview`, `cf:deploy`, `preview`, `deploy`, `upload` в `package.json`.
+- Добавлен `.open-next/**` в ESLint ignores (build output).
+- `npm run cf:build` успешен — сгенерирован `.open-next/worker.js` и маршруты для текущего Next.js-приложения.
+- Подтверждён baseline перед деплоем: lint 0 ошибок, typecheck 0 ошибок, unit tests 191/191, integration 89/89, security (mock) 115/115, security (real-DB) 42/42.
+- Создан R2 bucket `mebel-legal-cache` через Wrangler CLI.
+- Wrangler аутентифицирован: `muriktl@gmail.com`, account `ca7e89e2e4e294af2c7db130838cf0e0`.
+- `SUPABASE_SERVICE_ROLE_KEY` установлен как Cloudflare secret через `wrangler secret put`.
+- Public env vars добавлены в `wrangler.jsonc` `[vars]` секцию.
+- **Исправлена ошибка 500 (ChunkLoadError)** — переключение с Turbopack на webpack (`next build --webpack`).
+- **Решена проблема non-ASCII путей** — проект перенесён в `C:\work\mebel-legal-kz`.
+- Добавлен env constraint в `AGENTS.md`.
+- Supabase Site URL и Redirect URLs настроены в Dashboard.
+- Smoke validation 11/11 пройдена.
+- Коммит `5879f57` → pushed в `main`.
 
 ### Что выбрано для деплоя
 
 **OpenNext on Cloudflare Workers** (`@opennextjs/cloudflare`)
 
-- Поддерживает Next.js 16 с Node.js runtime (полная совместимость)
-- `@cloudflare/next-on-pages` deprecated — OpenNext это official replacement
-- Supabase SSR auth, Server Actions, App Router — всё работает
+- Поддерживает Next.js 16 с Node.js runtime и полную функциональность App Router, Server Actions и SSR.
+- `@cloudflare/next-on-pages` помечен как deprecated; OpenNext Cloudflare adapter — рекомендованный путь для Next.js на Cloudflare.
+- Совместим с Supabase SSR auth (cookie-based) и существующей архитектурой MebelLegal KZ.
 
 ### Файлы добавлены/изменены
 
 | Файл | Цель |
 |---|---|
-| `wrangler.jsonc` | Cloudflare Worker config — name, compat flags, R2 cache, images |
-| `open-next.config.ts` | OpenNext build config — R2 incremental cache |
-| `public/_headers` | Кэширование статических ассетов |
-| `eslint.config.mjs` | Добавлен `.open-next/**` в ignores |
-| `package.json` | `@opennextjs/cloudflare`, `wrangler`, скрипты деплоя |
+| `wrangler.jsonc` | Конфигурация Cloudflare Worker: имя, совместимость (nodejs_compat), дата, привязки, R2 cache, images, `[vars]` |
+| `open-next.config.ts` | Конфигурация OpenNext: R2 incremental cache |
+| `public/_headers` | Кэширование статических ассетов (/_next/static/* → immutable) |
+| `eslint.config.mjs` | Добавлен `.open-next/**` в глобальные игнорируемые пути |
+| `package.json` | `@opennextjs/cloudflare`, `wrangler`, скрипты деплоя, `next build --webpack` |
+| `AGENTS.md` | Environment constraint — non-ASCII paths запрещены |
 | `docs/deployment/cloudflare-workers.md` | Документация деплоя |
+| `SESSION_NOTES.md` | Данная секция |
 
 ### Команды
 
 ```bash
-npm run preview        # Локальный preview (workerd)
-npm run cf:build       # Build для Cloudflare
-npm run cf:deploy      # Deploy на Cloudflare Workers
+# Локальный preview в Cloudflare runtime (workerd)
+npm run preview
+
+# Сборка для Cloudflare (OpenNext → .open-next/worker.js)
+npm run cf:build
+
+# Деплой на Cloudflare Workers
+npm run cf:deploy
 ```
 
-### Env vars для Cloudflare
+### Env vars и secrets для Cloudflare
 
-| Variable | Public/Server | Required | Notes |
-|---|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Public | Yes | Inlined at build time |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | Yes | Inlined at build time |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server-only | Yes | `wrangler secret put` — NEVER in browser |
-| `NEXT_PUBLIC_APP_ENV` | Public | Yes | Set to `staging` |
+| Variable | Public/Server | Required | Where set | Notes |
+|---|---|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Public | Yes | `wrangler.jsonc` [vars] | Встраивается на build-этапе, безопасен для браузера |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | Yes | `wrangler.jsonc` [vars] | Встраивается на build-этапе, безопасен при стандартной Supabase конфигурации |
+| `NEXT_PUBLIC_APP_ENV` | Public | Yes | `wrangler.jsonc` [vars] | Установить в `staging` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only | Yes | `wrangler secret put` | Никогда не использовать в `NEXT_PUBLIC_*` и не отдавать в браузер |
 
-### Настройки Supabase
+### Настройки Supabase (Auth)
 
-- Site URL: `https://mebel-legal-kz.<hash>.workers.dev`
-- Redirect URLs: `https://mebel-legal-kz.<hash>.workers.dev/*`
+В Supabase Dashboard → Authentication → URL Configuration:
 
-### Cloudflare Dashboard — пошагово
+| Setting | Value |
+|---|---|
+| Site URL | `https://mebel-legal-kz.muriktl.workers.dev` |
+| Redirect URLs | `https://mebel-legal-kz.muriktl.workers.dev/**` |
 
-1. R2 → Create bucket: `mebel-legal-cache`
-2. Workers & Pages → Create → Pages → Connect to Git
-3. Build: `npm run cf:build`, output: `.open-next`, Node: `22`
-4. Settings → Variables: 3 env vars (2 public + 1 secret)
-5. Functions → Compatibility Flags: `nodejs_compat`
-6. Push to `main` → auto-deploy
+Текущий cookie-based SSR auth через `@supabase/ssr` сохраняется без изменений.
 
-### Post-deploy smoke checks
+### Cloudflare Dashboard — что сделано
 
-1. `/login` → рендерится
-2. Login → `/app`
-3. `/app/cases`, `/app/legal/sources`, `/app/legal/rules`, `/app/templates`, `/app/approvals` → не падают
-4. `/app/cases/[id]/changes`, `/app/cases/[id]/claims` → не падают
-5. Нет client-side ошибок
-6. `SUPABASE_SERVICE_ROLE_KEY` не виден в Network tab
+1. ✅ R2 → Bucket создан: `mebel-legal-cache`
+2. ✅ Wrangler CLI → Деплой через `wrangler deploy`
+3. ✅ Env vars: 3 public vars в `[vars]` + 1 secret
+4. ✅ Compatibility Flags: `nodejs_compat`, `global_fetch_strictly_public`
+
+### Post-deploy smoke checks — 11/11 ✅
+
+| # | Check | Result |
+|---|-------|--------|
+| 1 | Root → 307 redirect | ✅ 307 → /login |
+| 2 | /login → 200 | ✅ 200 OK |
+| 3 | x-opennext header | ✅ `x-opennext: 1` |
+| 4 | x-powered-by | ✅ `Next.js` |
+| 5 | HTML lang="ru" | ✅ SSR с lang="ru" |
+| 6 | CSS served | ✅ 200, 25KB |
+| 7 | JS chunk served | ✅ 200, 132KB |
+| 8 | No SERVICE_ROLE in HTML | ✅ Clean |
+| 9 | Supabase URL in bundle | ✅ (в JS chunks) |
+| 10 | 404 on unknown route | ✅ 404 |
+| 11 | /app route | ✅ 200 (SSR) |
 
 ### Rollback
 
@@ -694,12 +722,11 @@ npm run cf:deploy      # Deploy на Cloudflare Workers
 
 ### Ограничения
 
-- Только внутреннее использование (без custom domain)
-- Нет реальных договоров и персональных данных
-- R2 bucket опционален (проект не использует ISR, но настроен для будущего)
-- Windows warning — OpenNext рекомендует WSL для продакшена
-- **Webpack required** — `package.json` использует `next build --webpack` т.к. OpenNext v1.20.1 не бандлит Turbopack SSR-чанки корректно на Workers
-- **Non-ASCII paths** — все build/deploy команды запускать только из ASCII-директорий
+- Только внутренний staging (без production custom domain, без клиентского доступа).
+- Нет реальных договоров, кейсов и персональных данных — только синтетика.
+- R2 incremental cache пока не используется; включение — отдельное решение на этапе ISR.
+- **Webpack required** — `package.json` использует `next build --webpack` т.к. OpenNext v1.20.1 не бандлит Turbopack SSR-чанки корректно на Workers.
+- **Non-ASCII paths** — все build/deploy команды запускать только из ASCII-директорий.
 
 ### Решённые проблемы деплоя
 
@@ -707,7 +734,7 @@ npm run cf:deploy      # Deploy на Cloudflare Workers
 - **Симптом**: Worker деплоился, но возвращал 500. В логах: `ChunkLoadError: Failed to load chunk server/chunks/ssr/[root-of-the-server]__0ba6p-0._.js`
 - **Причина**: Next.js 16 по умолчанию использует Turbopack. OpenNext v1.20.1 не поддерживает Turbopack SSR-чанки — они не попадают в бандл воркера
 - **Решение**: `"build": "next build --webpack"` в package.json
-- **Коммит**: TBD
+- **Коммит**: `5879f57`
 
 **Non-ASCII path breakage**
 - **Симптом**: `wrangler dev`, `wrangler deploy`, PowerShell cmdlets падали с ошибками файлового доступа
