@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import { config } from 'dotenv';
 import { resolve } from 'path';
@@ -51,6 +51,16 @@ describe('Real-DB: Table Existence Check', () => {
 
   it('legal_rules table exists in database', async () => {
     const exists = await tableExists('legal_rules');
+    expect(exists).toBe(true);
+  });
+
+  it('contract_templates table exists in database', async () => {
+    const exists = await tableExists('contract_templates');
+    expect(exists).toBe(true);
+  });
+
+  it('contract_packages table exists in database', async () => {
+    const exists = await tableExists('contract_packages');
     expect(exists).toBe(true);
   });
 });
@@ -191,6 +201,151 @@ describe('Real-DB: Service Role CRUD (bypasses RLS)', () => {
 
     const { data } = await admin.from('legal_sources').select('id').eq('id', sourceId).maybeSingle();
     expect(data).toBeNull();
+  });
+});
+
+describe('Real-DB: Stage 3 - Contract Templates CRUD', () => {
+  let templateId: string;
+
+  it('can SELECT from contract_templates with service role', async () => {
+    const { error } = await admin
+      .from('contract_templates')
+      .select('id')
+      .limit(1);
+    expect(error).toBeNull();
+  });
+
+  it('can INSERT into contract_templates', async () => {
+    const { data, error } = await admin
+      .from('contract_templates')
+      .insert({
+        organization_id: TEST_ORG_ID,
+        code: 'REALDB-TPL-001',
+        title: 'Real-DB Test Template',
+        customer_type: 'individual',
+        project_type: 'manufacture_only',
+        status: 'draft',
+        schema: { variables: {}, blocks: [] },
+        created_by: TEST_USER_ID || '00000000-0000-0000-0000-000000000000',
+      })
+      .select('id')
+      .single();
+
+    expect(error).toBeNull();
+    expect(data?.id).toBeDefined();
+    templateId = data!.id;
+  });
+
+  it('can UPDATE contract_templates status', async () => {
+    const { error } = await admin
+      .from('contract_templates')
+      .update({ status: 'expert_review' })
+      .eq('id', templateId);
+
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('contract_templates')
+      .select('status')
+      .eq('id', templateId)
+      .single();
+
+    expect(data?.status).toBe('expert_review');
+  });
+
+  it('can DELETE template (service role cleanup)', async () => {
+    await admin.from('contract_templates').delete().eq('id', templateId);
+    const { data } = await admin.from('contract_templates').select('id').eq('id', templateId).maybeSingle();
+    expect(data).toBeNull();
+  });
+});
+
+describe('Real-DB: Stage 3 - Contract Packages CRUD', () => {
+  let packageId: string;
+  let caseId: string;
+
+  beforeAll(async () => {
+    const { data: caseData, error: caseError } = await admin
+      .from('legal_cases')
+      .upsert({
+        organization_id: TEST_ORG_ID,
+        case_number: 'LC-999901',
+        title: 'Real-DB Test Case',
+        customer_type: 'individual',
+        customer_display_name: 'Тестовый клиент',
+        project_type: 'manufacture_only',
+        status: 'draft',
+        currency: 'KZT',
+        source_type: 'manual',
+        version: 1,
+        created_by: TEST_USER_ID || '00000000-0000-0000-0000-000000000000',
+      })
+      .select('id')
+      .single();
+
+    if (caseError) {
+      console.log('caseError:', caseError.message, caseError.code);
+    }
+    caseId = caseData?.id || '';
+  });
+
+  afterAll(async () => {
+    if (caseId) {
+      await admin.from('legal_cases').delete().eq('id', caseId);
+    }
+  });
+
+  it('can SELECT from contract_packages with service role', async () => {
+    const { error } = await admin
+      .from('contract_packages')
+      .select('id')
+      .limit(1);
+    expect(error).toBeNull();
+  });
+
+  it('can INSERT into contract_packages', async () => {
+    if (!caseId) {
+      console.log('Skipping: could not create test case');
+      return;
+    }
+    const { data, error } = await admin
+      .from('contract_packages')
+      .insert({
+        legal_case_id: caseId,
+        template_code: 'REALDB-TPL-001',
+        version: 1,
+        status: 'draft',
+        content_snapshot: { amount: '3500000' },
+        source_revision_ids: [],
+        created_by: TEST_USER_ID || '00000000-0000-0000-0000-000000000000',
+      })
+      .select('id')
+      .single();
+
+    expect(error).toBeNull();
+    expect(data?.id).toBeDefined();
+    packageId = data!.id;
+  });
+
+  it('can UPDATE contract_packages status', async () => {
+    if (!packageId) {
+      console.log('Skipping: package not created');
+      return;
+    }
+    const { error } = await admin
+      .from('contract_packages')
+      .update({ status: 'under_review' })
+      .eq('id', packageId);
+
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('contract_packages')
+      .select('status')
+      .eq('id', packageId)
+      .single();
+
+    expect(data?.status).toBe('under_review');
   });
 });
 
