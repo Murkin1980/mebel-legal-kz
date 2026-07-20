@@ -1,205 +1,122 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useActionState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import type { Organization } from '@/modules/shared/types';
+import { createCase } from '../actions';
 
 export default function NewCasePage() {
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [selectedOrg, setSelectedOrg] = useState<string>('');
-  const [caseNumber, setCaseNumber] = useState('');
-  const [title, setTitle] = useState('');
-  const [customerType, setCustomerType] = useState<string>('legal_entity');
-  const [customerDisplayName, setCustomerDisplayName] = useState('');
-  const [projectType, setProjectType] = useState<string>('manufacture_only');
-  const [totalAmount, setTotalAmount] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const [state, formAction, isPending] = useActionState(
+    async (_prev: { error?: string; caseId?: string } | null, formData: FormData) => {
+      const result = await createCase({
+        caseNumber: formData.get('caseNumber') as string,
+        title: formData.get('title') as string,
+        customerType: formData.get('customerType') as string,
+        customerDisplayName: formData.get('customerDisplayName') as string,
+        projectType: formData.get('projectType') as string,
+        totalAmount: formData.get('totalAmount') as string || undefined,
+      });
 
-  useEffect(() => {
-    const fetchOrganizations = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push('/login');
-        return;
+      if (!result.success) {
+        return { error: result.error };
       }
 
-      const { data: memberships } = await supabase
-        .from('organization_memberships')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .eq('status', 'active');
+      return { caseId: result.data?.caseId };
+    },
+    null
+  );
 
-      if (!memberships || memberships.length === 0) {
-        setError('У вас нет доступных организаций');
-        return;
-      }
-
-      const orgIds = memberships.map((m) => m.organization_id);
-      const { data: orgs } = await supabase
-        .from('organizations')
-        .select('*')
-        .in('id', orgIds);
-
-      setOrganizations(orgs || []);
-      if (orgs && orgs.length > 0) {
-        setSelectedOrg(orgs[0].id);
-      }
-    };
-
-    fetchOrganizations();
-  }, [supabase, router]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-
-    // Convert amount from tenge to tyins
-    const totalAmountTiyin = totalAmount
-      ? String(Math.round(parseFloat(totalAmount) * 100))
-      : null;
-
-    const { data, error: insertError } = await supabase
-      .from('legal_cases')
-      .insert({
-        organization_id: selectedOrg,
-        case_number: caseNumber,
-        title,
-        customer_type: customerType,
-        customer_display_name: customerDisplayName,
-        project_type: projectType,
-        total_amount_tiyin: totalAmountTiyin,
-        created_by: user.id,
-        status: 'draft',
-        version: 1,
-      })
-      .select()
-      .single();
-
-    if (insertError) {
-      setError('Ошибка создания кейса: ' + insertError.message);
-      setLoading(false);
-      return;
-    }
-
-    // Create audit event
-    await supabase.from('audit_events').insert({
-      organization_id: selectedOrg,
-      actor_user_id: user.id,
-      event_type: 'case.created',
-      entity_type: 'legal_case',
-      entity_id: data.id,
-      command_id: crypto.randomUUID(),
-      payload: {
-        case_number: caseNumber,
-        title,
-        customer_type: customerType,
-        status: 'draft',
-      },
-    });
-
-    router.push(`/app/cases/${data.id}`);
-  };
+  if (state?.caseId) {
+    router.push(`/app/cases/${state.caseId}`);
+    return null;
+  }
 
   return (
     <div className="max-w-2xl mx-auto">
+      <div className="mb-6">
+        <button
+          onClick={() => router.back()}
+          className="text-blue-600 hover:text-blue-800 text-sm focus:outline-none focus:underline"
+        >
+          ← Назад к списку
+        </button>
+      </div>
+
       <h2 className="text-2xl font-semibold text-gray-900 mb-6">
         Создать новый кейс
       </h2>
 
-      <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-6">
-        {organizations.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Организация
-            </label>
-            <select
-              value={selectedOrg}
-              onChange={(e) => setSelectedOrg(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            >
-              {organizations.map((org) => (
-                <option key={org.id} value={org.id}>
-                  {org.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
+      <form action={formAction} className="bg-white shadow rounded-lg p-6 space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Номер кейса
+          <label htmlFor="caseNumber" className="block text-sm font-medium text-gray-700">
+            Номер кейса <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
-            value={caseNumber}
-            onChange={(e) => setCaseNumber(e.target.value)}
+            id="caseNumber"
+            name="caseNumber"
             placeholder="LC-000001"
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             required
+            pattern="LC-\d{6}"
+            title="Формат: LC-XXXXXX (6 цифр)"
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
+          <p className="mt-1 text-xs text-gray-500">Формат: LC-XXXXXX (6 цифр)</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Название
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+            Название <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            id="title"
+            name="title"
             required
+            maxLength={500}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Тип клиента
+          <label htmlFor="customerType" className="block text-sm font-medium text-gray-700">
+            Тип клиента <span className="text-red-500">*</span>
           </label>
           <select
-            value={customerType}
-            onChange={(e) => setCustomerType(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            id="customerType"
+            name="customerType"
+            required
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="individual">Физическое лицо</option>
-            <option value="individual_entrepreneur">ИП</option>
             <option value="legal_entity">Юридическое лицо</option>
+            <option value="individual_entrepreneur">ИП</option>
+            <option value="individual">Физическое лицо</option>
           </select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Отображаемое имя клиента
+          <label htmlFor="customerDisplayName" className="block text-sm font-medium text-gray-700">
+            Отображаемое имя клиента <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
-            value={customerDisplayName}
-            onChange={(e) => setCustomerDisplayName(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            id="customerDisplayName"
+            name="customerDisplayName"
             required
+            maxLength={255}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Тип проекта
+          <label htmlFor="projectType" className="block text-sm font-medium text-gray-700">
+            Тип проекта <span className="text-red-500">*</span>
           </label>
           <select
-            value={projectType}
-            onChange={(e) => setProjectType(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            id="projectType"
+            name="projectType"
+            required
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="manufacture_only">Только производство</option>
             <option value="manufacture_delivery">Производство + доставка</option>
@@ -208,37 +125,40 @@ export default function NewCasePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label htmlFor="totalAmount" className="block text-sm font-medium text-gray-700">
             Сумма (₸)
           </label>
           <input
             type="number"
-            value={totalAmount}
-            onChange={(e) => setTotalAmount(e.target.value)}
+            id="totalAmount"
+            name="totalAmount"
             min="0"
             step="1"
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
+          <p className="mt-1 text-xs text-gray-500">Необязательно. Укажите сумму в тенге.</p>
         </div>
 
-        {error && (
-          <div className="text-sm text-red-600">{error}</div>
+        {state?.error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-md" role="alert">
+            <p className="text-sm text-red-700">{state.error}</p>
+          </div>
         )}
 
-        <div className="flex justify-end space-x-4">
+        <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
           <button
             type="button"
             onClick={() => router.back()}
-            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             Отмена
           </button>
           <button
             type="submit"
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            disabled={isPending}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            {loading ? 'Создание...' : 'Создать кейс'}
+            {isPending ? 'Создание...' : 'Создать кейс'}
           </button>
         </div>
       </form>
