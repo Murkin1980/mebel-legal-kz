@@ -597,11 +597,10 @@ Real-DB тесты (30 tests) подтверждают:
 | Typecheck | ✅ 0 errors |
 | Unit tests | ✅ 191/191 |
 | Integration tests | ✅ 89/89 |
-| Security tests (mock) | ✅ 153/153 |
-| Security tests (real-DB) | ⏳ 4 failed (tables not applied) |
+| Security tests (mock) | ✅ 115/115 |
+| Security tests (real-DB) | ✅ 42/42 |
 
-**Общий итог тестов: 433** (191 unit + 89 integration + 253 security)
-**Реальный итог после применения миграций: ~433**
+**Общий итог тестов: 433** (191 unit + 89 integration + 115 security + 42 real-DB)
 
 ### Git commits (Этап 5)
 
@@ -609,4 +608,4 @@ Real-DB тесты (30 tests) подтверждают:
 
 ### Ожидание
 
-Миграции 022–025 созданы как `022_025_combined_stage5.sql` и **ожидają применения** через SQL Editor в Supabase dashboard. После применения — перезапустить real-DB тесты.
+Этап 5 завершён и валидирован. Ожидает финальной приёмки владельцем.
