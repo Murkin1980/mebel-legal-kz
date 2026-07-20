@@ -334,12 +334,13 @@ mebel-legal-kz/
 | **Итого integration** | **24** | **35** | **+11** |
 | Security (rls-policies) | 31 | 31 | — |
 | Security (legal-sources-rls) | — | 20 | +20 |
-| **Итого security** | **31** | **51** | **+20** |
+| Security (legal-sources-realdb) | — | 16 | +16 |
+| **Итого security** | **31** | **67** | **+36** |
 | E2E (smoke) | 18 | 18 | — |
 | E2E (accessibility) | 17 | 17 | — |
 | E2E (legal-sources) | — | 11 | +11 |
-| **Итого e2e** | **38** | **49** | **+11** |
-| **Общий итог** | **166** | **224** | **+58** |
+| **Итого e2e** | **38** | **51** | **+13** |
+| **Общий итог** | **166** | **242** | **+76** |
 
 ### Валидация (Этап 2 — 20 июля 2026)
 
@@ -349,11 +350,12 @@ mebel-legal-kz/
 | Typecheck | ✅ 0 errors |
 | Unit tests | ✅ 89/89 |
 | Integration tests | ✅ 35/35 |
-| Security tests | ✅ 51/51 (mock-based) |
+| Security tests (mock) | ✅ 51/51 |
+| Security tests (real-DB) | ✅ 16/16 |
 | Build | ✅ 12 routes |
 | E2E tests | ✅ 51/51 |
 
-**Общий итог тестов: 226** (89 unit + 35 integration + 51 security + 51 e2e)
+**Общий итог тестов: 242** (89 unit + 35 integration + 67 security + 51 e2e)
 
 ### Следующий шаг
 
