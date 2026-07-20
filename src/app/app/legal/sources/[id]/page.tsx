@@ -31,7 +31,7 @@ export default async function SourceDetailPage({
     notFound();
   }
 
-  let revisions;
+  let revisions: Awaited<ReturnType<typeof legalSourceService.getSourceRevisions>>;
   try {
     revisions = await legalSourceService.getSourceRevisions(source.id);
   } catch {

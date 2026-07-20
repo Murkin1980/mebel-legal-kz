@@ -25,7 +25,7 @@ export default async function LegalRulesPage({
   const role = await organizationService.getUserRole(org.id, user.id);
 
   const params = await searchParams;
-  let rules;
+  let rules: Awaited<ReturnType<typeof ruleService.getOrganizationRules>>;
   try {
     rules = await ruleService.getOrganizationRules(org.id, {
       status: params.status as LegalRuleStatus | undefined,

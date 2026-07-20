@@ -25,7 +25,7 @@ export default async function LegalSourcesPage({
   const role = await organizationService.getUserRole(org.id, user.id);
 
   const params = await searchParams;
-  let sources;
+  let sources: Awaited<ReturnType<typeof legalSourceService.getOrganizationSources>>;
   try {
     sources = await legalSourceService.getOrganizationSources(org.id, {
       status: params.status as LegalSourceStatus | undefined,
