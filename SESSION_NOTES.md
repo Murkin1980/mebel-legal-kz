@@ -270,7 +270,28 @@ mebel-legal-kz/
 ## Сессия: Этап 2 — Реестр правовых источников и правил
 
 **Дата:** 20 июля 2026 года
-**Статус:** В процессе (код готов, миграции не применены)
+**Статус:** Завершена
+
+### Миграции — применение
+
+Миграции 010–013 применены к Supabase проекту `uctedpswcbcwufzegvhl` через SQL Editor.
+Способ: пользователь выполнил `supabase/migrations/010_013_combined_stage2.sql` (объединённый скрипт) в dashboard → SQL Editor → New query → Run → "Success. No rows returned".
+
+Канонический путь миграций — отдельные файлы:
+- `010_legal_sources_and_rules.sql` — таблицы
+- `011_rls_legal_sources_rules.sql` — RLS политики
+- `012_grants_legal_sources_rules.sql` — GRANT/REVOKE
+- `013_indexes_legal_sources_rules.sql` — индексы
+
+`010_013_combined_stage2.sql` — вспомогательный артефакт для удобства ручного применения. Не является частью sequence миграций Supabase CLI.
+
+### Доказательства применения миграций
+
+Real-DB тесты (`tests/security/legal-sources-realdb.test.ts`, 16 tests) подтверждают:
+- `SELECT` из `legal_sources`, `legal_source_revisions`, `legal_rules` возвращает пустые массивы (не 42P01 "table not found") → таблицы существуют
+- `INSERT` с FK constraint на `created_by` → FK references `auth.users` работает → constraints применены
+- `anon` client без auth → RLS блокирует SELECT и INSERT → RLS включён
+- E2E тесты 51/51 → приложение корректно загружает страницы с legal-маршрутами
 
 ### Что сделано
 
@@ -279,7 +300,7 @@ mebel-legal-kz/
 - `011_rls_legal_sources_rules.sql` — RLS политики для всех 3 таблиц
 - `012_grants_legal_sources_rules.sql` — GRANT/REVOKE для authenticated + service_role
 - `013_indexes_legal_sources_rules.sql` — индексы по org, status, FK
-- `010_013_combined_stage2.sql` — объединённый скрипт для ручного применения
+- `010_013_combined_stage2.sql` — объединённый скрипт (вспомогательный)
 
 #### Доменные модули
 - `src/modules/legal-sources/legal-source.service.ts` — LegalSourceService (CRUD + state transitions)
@@ -301,7 +322,8 @@ mebel-legal-kz/
 #### Тесты
 - `tests/unit/legal-source-state-machine.test.ts` — 16 тестов
 - `tests/integration/legal-source-commands.test.ts` — 11 тестов
-- `tests/security/legal-sources-rls.test.ts` — 20 тестов
+- `tests/security/legal-sources-rls.test.ts` — 20 тестов (mock-based)
+- `tests/security/legal-sources-realdb.test.ts` — 16 тестов (real-DB, доказывает применение миграций)
 - `tests/e2e/legal-sources.spec.ts` — 11 E2E тестов
 
 ### Foundation Check (Этап 2)
@@ -359,4 +381,4 @@ mebel-legal-kz/
 
 ### Следующий шаг
 
-Применить миграции 010–013 в Supabase SQL Editor, затем полная валидация и принятие этапа 2.
+Этап 2 завершён и валидирован. Ожидает финальной приёмки владельцем.
