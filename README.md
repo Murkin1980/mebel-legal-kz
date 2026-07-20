@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MebelLegal KZ
 
-## Getting Started
+**Правовой контур для мебельного бизнеса Республики Казахстан**
 
-First, run the development server:
+[![CI](https://github.com/Murkin1980/mebel-legal-kz/actions/workflows/ci.yml/badge.svg)](https://github.com/Murkin1980/mebel-legal-kz/actions/workflows/ci.yml)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## ⚠️ ВАЖНО
+
+**Этап 1. Юридические документы и проверка законодательства ещё не подключены.**
+
+Система на первом этапе **не заменяет юриста**, **не гарантирует законность документа** и **не обещает исход судебного спора**.
+
+---
+
+## Назначение
+
+MebelLegal KZ — правовой контур для мебельного бизнеса Республики Казахстан.
+
+Система должна помогать:
+
+- подготовить комплект документов мебельного заказа;
+- проверить комплектность и известные риски;
+- связать вывод с утверждённым официальным источником;
+- зафиксировать конкретную версию договора, спецификации и эскиза;
+- получить и доказуемо сохранить решение клиента;
+- контролировать изменения заказа;
+- передать утверждённые данные в соседние системы.
+
+## Архитектура
+
+- **Модульный монолит** на Next.js 16 (App Router) + Supabase PostgreSQL
+- Мультитенантность через `organization_id` + Row Level Security
+- Доменные команды с проверкой ролей и идемпотентностью
+- Append-only audit log
+- Деньги в тийинах (bigint)
+
+## Структура проекта
+
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── login/              # Экран входа
+│   └── app/                # Основное приложение
+│       ├── cases/          # Управление кейсами
+│       └── audit/          # Журнал событий
+├── modules/
+│   ├── identity/           # Аутентификация
+│   ├── organizations/      # Организации и участники
+│   ├── cases/              # Юридические кейсы
+│   ├── audit/              # Audit log
+│   └── shared/             # Общие типы (Money, ошибки)
+├── lib/
+│   ├── supabase/           # Клиенты Supabase
+│   └── errors/             # Стандартизированные ошибки
+supabase/
+└── migrations/             # SQL миграции
+tests/
+├── unit/                   # Unit тесты
+├── integration/            # Integration тесты
+└── security/               # Security тесты (RLS)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Быстрый старт
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Клонировать репозиторий
+git clone https://github.com/Murkin1980/mebel-legal-kz.git
+cd mebel-legal-kz
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Установить зависимости
+npm install
 
-## Learn More
+# Скопировать переменные окружения
+cp .env.example .env.local
 
-To learn more about Next.js, take a look at the following resources:
+# Заполнить Supabase credentials в .env.local
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Выполнить миграции в Supabase Dashboard
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Запустить разработку
+npm run dev
+```
 
-## Deploy on Vercel
+## Команды
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run lint           # Линтер
+npm run typecheck      # Проверка типов
+npm run test           # Unit тесты
+npm run test:integration  # Integration тесты
+npm run test:security  # Security тесты (RLS)
+npm run build          # Сборка проекта
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Технологии
+
+- Next.js 16 (App Router)
+- React 19
+- TypeScript (strict)
+- Supabase PostgreSQL + Auth + RLS
+- Zod (валидация)
+- Vitest (тесты)
+- ESLint
+
+## Документация
+
+| Документ | Назначение |
+|---|---|
+| [FOUNDATION.md](./FOUNDATION.md) | **Обязательный архитектурный договор проекта** |
+| [PRODUCT.md](./PRODUCT.md) | Описание продукта |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Архитектурные решения |
+| [COMPLIANCE.md](./COMPLIANCE.md) | Правовые ограничения |
+| [SECURITY.md](./SECURITY.md) | Модель безопасности |
+| [ROADMAP.md](./ROADMAP.md) | Дорожная карта |
+| [CHECKLISTS.md](./CHECKLISTS.md) | Чек-листы этапов |
+| [AI_INFRA_DECISION.md](./AI_INFRA_DECISION.md) | Решения по AI |
+| [SESSION_NOTES.md](./SESSION_NOTES.md) | Заметки сессий |
+
+## Границы систем
+
+| Система | Владеет |
+|---|---|
+| **MebelLegal KZ** | Правовые источники, правила, шаблоны, кейсы, договоры, согласования, audit log |
+| **Interactive KP** | Коммерческие предложения, варианты комплектации |
+| **MebelDocs AI** | Счета, платежи, бухгалтерские документы, ЭСФ |
+
+**Запрещён прямой доступ одной системы к таблицам другой.**
+
+## Лицензия
+
+Проприетарный проект. Все права защищены.

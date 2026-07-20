@@ -1,5 +1,96 @@
-<!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
+# AGENTS.md — MebelLegal KZ
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
-<!-- END:nextjs-agent-rules -->
+## Инструкции для AI-кодеров
+
+### Обязательное чтение
+
+Перед любой задачей прочитать:
+
+1. **[FOUNDATION.md](./FOUNDATION.md)** — обязательный архитектурный договор проекта
+2. `FIRST_STAGE_INSTRUCTION_MEBELLEGAL_KZ.md` — инструкция этапа 0–1
+
+### Подтверждение перед работой
+
+Перед началом задачи кодер должен включить в план строку:
+
+> `FOUNDATION.md` прочитан. Для текущей задачи применимы разделы: [перечислить]. Конфликтов с фундаментом: [нет / описать].
+
+### Foundation Check после работы
+
+В конце каждой задачи кодер добавляет в `SESSION_NOTES.md`:
+
+```markdown
+### Foundation Check
+
+- [ ] Границы MebelLegal KZ / Interactive KP / MebelDocs AI не нарушены.
+- [ ] Tenant isolation и RLS сохранены/проверены.
+- [ ] Серверная авторизация присутствует.
+- [ ] Деньги не хранятся в float/JavaScript number.
+- [ ] State transitions выполняются доменной командой.
+- [ ] Юридически значимые действия идемпотентны.
+- [ ] Audit log дополнен и остаётся append-only.
+- [ ] Подтверждённые данные не перезаписываются, а версионируются.
+- [ ] AI не выполняет запрещённые решения.
+- [ ] В Git, логах и fixtures нет реальных данных и секретов.
+- [ ] Добавлены unit/integration/security/contract tests по риску изменения.
+- [ ] Изменение соответствует разрешённому текущему этапу.
+```
+
+### Технологический стек
+
+- Next.js 16 (App Router)
+- React 19
+- TypeScript strict
+- Supabase PostgreSQL + Auth + RLS
+- Zod
+- Vitest
+- ESLint
+
+### Принципы
+
+1. **Tenant isolation** — `organization_id` + RLS везде.
+2. **Доменные команды** — изменения через проверяемые команды.
+3. **Append-only audit** — история не перезаписывается.
+4. **Идемпотентность** — повтор не создаёт дубль.
+5. **Деньги в тийинах** — bigint, не float/number.
+
+### Запреты
+
+- Нет прямого доступа к таблицам соседней системы;
+- Нет пользовательской таблицы без RLS;
+- Нет денег в float/JavaScript number;
+- Нет тихого изменения или удаления истории;
+- Нет публикации правила или шаблона без человека;
+- Нет AI как единственного механизма юридического решения;
+- Нет реальных договоров и реквизитов в Git;
+- Нет service role в браузере;
+- Нет повторной юридически значимой операции при повторном запросе.
+
+### Структура проекта
+
+```
+src/
+├── app/                    # Next.js App Router
+├── modules/
+│   ├── identity/           # Аутентификация
+│   ├── organizations/      # Организации и участники
+│   ├── cases/              # Юридические кейсы
+│   ├── audit/              # Audit log
+│   └── shared/             # Общие типы
+├── lib/
+│   ├── supabase/           # Клиенты Supabase
+│   └── errors/             # Стандартизированные ошибки
+```
+
+### Команды CI
+
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run test:integration
+npm run test:security
+npm run build
+```
+
+Все команды должны завершаться успешно.
