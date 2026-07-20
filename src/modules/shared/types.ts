@@ -44,6 +44,14 @@ export type ContractPackageStatus =
 // Stage 4: Contract Approvals
 export type ApprovalStatus = 'draft' | 'pending_review' | 'approved' | 'rejected' | 'revoked';
 
+// Stage 5: Change Orders
+export type ChangeOrderStatus = 'draft' | 'requested' | 'approved' | 'rejected' | 'applied' | 'cancelled';
+export type ChangeType = 'scope' | 'price' | 'deadline' | 'terms' | 'other';
+
+// Stage 5: Claims
+export type ClaimStatus = 'open' | 'in_review' | 'resolved' | 'withdrawn';
+export type ClaimType = 'quality' | 'deadline' | 'payment' | 'scope' | 'other';
+
 export interface Organization {
   id: string;
   name: string;
@@ -182,6 +190,40 @@ export interface ContractApproval {
   created_by: string;
 }
 
+// Stage 5: Change Order
+export interface ChangeOrder {
+  id: string;
+  organization_id: string;
+  legal_case_id: string;
+  contract_package_id: string;
+  number: string;
+  status: ChangeOrderStatus;
+  change_type: ChangeType;
+  delta_amount: string;
+  reason: string;
+  created_at: string;
+  created_by: string;
+  applied_at: string | null;
+  metadata: Record<string, unknown>;
+}
+
+// Stage 5: Claim
+export interface Claim {
+  id: string;
+  organization_id: string;
+  legal_case_id: string;
+  contract_package_id: string | null;
+  change_order_id: string | null;
+  type: ClaimType;
+  status: ClaimStatus;
+  opened_at: string;
+  opened_by: string;
+  resolved_at: string | null;
+  resolution_summary: string | null;
+  resolution_rule_ids: string[] | null;
+  metadata: Record<string, unknown>;
+}
+
 /**
  * Allowed state transitions for legal cases
  */
@@ -254,6 +296,28 @@ export const APPROVAL_TRANSITIONS: Record<ApprovalStatus, ApprovalStatus[]> = {
   approved: [],
   rejected: [],
   revoked: [],
+};
+
+/**
+ * Allowed state transitions for change orders
+ */
+export const CHANGE_ORDER_TRANSITIONS: Record<ChangeOrderStatus, ChangeOrderStatus[]> = {
+  draft: ['requested', 'cancelled'],
+  requested: ['approved', 'rejected'],
+  approved: ['applied', 'cancelled'],
+  rejected: [],
+  applied: [],
+  cancelled: [],
+};
+
+/**
+ * Allowed state transitions for claims
+ */
+export const CLAIM_TRANSITIONS: Record<ClaimStatus, ClaimStatus[]> = {
+  open: ['in_review', 'withdrawn'],
+  in_review: ['resolved', 'withdrawn'],
+  resolved: [],
+  withdrawn: [],
 };
 
 /**
@@ -418,6 +482,57 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     observer: false,
   },
   view_approvals: {
+    owner: true,
+    manager: true,
+    designer: true,
+    legal_reviewer: true,
+    observer: true,
+  },
+  // Stage 5: Change Orders permissions
+  manage_changes: {
+    owner: true,
+    manager: true,
+    designer: false,
+    legal_reviewer: false,
+    observer: false,
+  },
+  approve_changes: {
+    owner: true,
+    manager: false,
+    designer: false,
+    legal_reviewer: true,
+    observer: false,
+  },
+  apply_changes: {
+    owner: true,
+    manager: false,
+    designer: false,
+    legal_reviewer: false,
+    observer: false,
+  },
+  view_changes: {
+    owner: true,
+    manager: true,
+    designer: true,
+    legal_reviewer: true,
+    observer: true,
+  },
+  // Stage 5: Claims permissions
+  manage_claims: {
+    owner: true,
+    manager: true,
+    designer: false,
+    legal_reviewer: true,
+    observer: false,
+  },
+  resolve_claims: {
+    owner: true,
+    manager: false,
+    designer: false,
+    legal_reviewer: true,
+    observer: false,
+  },
+  view_claims: {
     owner: true,
     manager: true,
     designer: true,

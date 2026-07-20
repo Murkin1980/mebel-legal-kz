@@ -68,6 +68,16 @@ describe('Real-DB: Table Existence Check', () => {
     const exists = await tableExists('contract_approvals');
     expect(exists).toBe(true);
   });
+
+  it('change_orders table exists in database', async () => {
+    const exists = await tableExists('change_orders');
+    expect(exists).toBe(true);
+  });
+
+  it('claims table exists in database', async () => {
+    const exists = await tableExists('claims');
+    expect(exists).toBe(true);
+  });
 });
 
 describe('Real-DB: Service Role CRUD (bypasses RLS)', () => {
@@ -536,5 +546,279 @@ describe('Real-DB: Stage 4 - Contract Approvals CRUD', () => {
 
     expect(data?.status).toBe('approved');
     expect(data?.decided_by).toBe(userId);
+  });
+});
+
+describe('Real-DB: change_orders and claims Table Existence', () => {
+  it('change_orders table exists in database', async () => {
+    const exists = await tableExists('change_orders');
+    expect(exists).toBe(true);
+  });
+
+  it('claims table exists in database', async () => {
+    const exists = await tableExists('claims');
+    expect(exists).toBe(true);
+  });
+});
+
+describe('Real-DB: change_orders CRUD', () => {
+  let changeOrderId: string | null = null;
+  let testCaseId: string | null = null;
+  let testPackageId: string | null = null;
+
+  beforeAll(async () => {
+    // Create a test case for change_orders
+    const userId = await getTestUserId();
+    const { data: caseData } = await admin
+      .from('legal_cases')
+      .insert({
+        organization_id: TEST_ORG_ID,
+        case_number: 'LC-999905',
+        title: 'Тестовый кейс для change orders',
+        customer_type: 'legal_entity',
+        customer_display_name: 'Тестовый клиент',
+        project_type: 'manufacture_only',
+        status: 'draft',
+        currency: 'KZT',
+        created_by: userId,
+      })
+      .select('id')
+      .single();
+
+    if (caseData) {
+      testCaseId = caseData.id;
+
+      // Create a test package
+      const { data: pkgData } = await admin
+        .from('contract_packages')
+        .insert({
+          legal_case_id: testCaseId,
+          template_code: 'TEST_TEMPLATE',
+          version: 1,
+          status: 'draft',
+          content_snapshot: {},
+          source_revision_ids: [],
+          created_by: userId,
+        })
+        .select('id')
+        .single();
+
+      if (pkgData) {
+        testPackageId = pkgData.id;
+      }
+    }
+  });
+
+  afterAll(async () => {
+    if (changeOrderId) {
+      await admin.from('change_orders').delete().eq('id', changeOrderId);
+    }
+    if (testPackageId) {
+      await admin.from('contract_packages').delete().eq('id', testPackageId);
+    }
+    if (testCaseId) {
+      await admin.from('legal_cases').delete().eq('id', testCaseId);
+    }
+  });
+
+  it('can SELECT from change_orders with service role', async () => {
+    const { error } = await admin
+      .from('change_orders')
+      .select('*')
+      .limit(1);
+
+    expect(error).toBeNull();
+  });
+
+  it('can INSERT into change_orders', async () => {
+    if (!testCaseId || !testPackageId) {
+      console.log('Skipping: test case or package not created');
+      return;
+    }
+    const userId = await getTestUserId();
+    const { data, error } = await admin
+      .from('change_orders')
+      .insert({
+        organization_id: TEST_ORG_ID,
+        legal_case_id: testCaseId,
+        contract_package_id: testPackageId,
+        number: 'CO-999901',
+        status: 'draft',
+        change_type: 'price',
+        delta_amount: 500000,
+        reason: 'Тестовое изменение стоимости',
+        created_by: userId,
+        metadata: { old_price: 1000000, new_price: 1500000 },
+      })
+      .select('id')
+      .single();
+
+    expect(error).toBeNull();
+    expect(data?.id).toBeDefined();
+    changeOrderId = data!.id;
+  });
+
+  it('can UPDATE change_orders status', async () => {
+    if (!changeOrderId) {
+      console.log('Skipping: change order not created');
+      return;
+    }
+    const { error } = await admin
+      .from('change_orders')
+      .update({ status: 'requested' })
+      .eq('id', changeOrderId);
+
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('change_orders')
+      .select('status')
+      .eq('id', changeOrderId)
+      .single();
+
+    expect(data?.status).toBe('requested');
+  });
+
+  it('can UPDATE change_orders to applied with applied_at', async () => {
+    if (!changeOrderId) {
+      console.log('Skipping: change order not created');
+      return;
+    }
+    const { error } = await admin
+      .from('change_orders')
+      .update({
+        status: 'applied',
+        applied_at: new Date().toISOString(),
+      })
+      .eq('id', changeOrderId);
+
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('change_orders')
+      .select('status, applied_at')
+      .eq('id', changeOrderId)
+      .single();
+
+    expect(data?.status).toBe('applied');
+    expect(data?.applied_at).toBeDefined();
+  });
+
+  it('can SELECT from claims with service role', async () => {
+    const { error } = await admin
+      .from('claims')
+      .select('*')
+      .limit(1);
+
+    expect(error).toBeNull();
+  });
+});
+
+describe('Real-DB: claims CRUD', () => {
+  let claimId: string | null = null;
+  let testCaseId: string | null = null;
+
+  beforeAll(async () => {
+    // Create a test case for claims
+    const userId = await getTestUserId();
+    const { data: caseData } = await admin
+      .from('legal_cases')
+      .insert({
+        organization_id: TEST_ORG_ID,
+        case_number: 'LC-999906',
+        title: 'Тестовый кейс для претензий',
+        customer_type: 'legal_entity',
+        customer_display_name: 'Тестовый клиент',
+        project_type: 'manufacture_only',
+        status: 'draft',
+        currency: 'KZT',
+        created_by: userId,
+      })
+      .select('id')
+      .single();
+
+    if (caseData) {
+      testCaseId = caseData.id;
+    }
+  });
+
+  afterAll(async () => {
+    if (claimId) {
+      await admin.from('claims').delete().eq('id', claimId);
+    }
+    if (testCaseId) {
+      await admin.from('legal_cases').delete().eq('id', testCaseId);
+    }
+  });
+
+  it('can INSERT into claims', async () => {
+    if (!testCaseId) {
+      console.log('Skipping: test case not created');
+      return;
+    }
+    const { data, error } = await admin
+      .from('claims')
+      .insert({
+        organization_id: TEST_ORG_ID,
+        legal_case_id: testCaseId,
+        type: 'quality',
+        status: 'open',
+        opened_by: 'test@mebel-legal-kz.test',
+        metadata: { description: 'Тестовая претензия по качеству' },
+      })
+      .select('id')
+      .single();
+
+    expect(error).toBeNull();
+    expect(data?.id).toBeDefined();
+    claimId = data!.id;
+  });
+
+  it('can UPDATE claims status to in_review', async () => {
+    if (!claimId) {
+      console.log('Skipping: claim not created');
+      return;
+    }
+    const { error } = await admin
+      .from('claims')
+      .update({ status: 'in_review' })
+      .eq('id', claimId);
+
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('claims')
+      .select('status')
+      .eq('id', claimId)
+      .single();
+
+    expect(data?.status).toBe('in_review');
+  });
+
+  it('can UPDATE claims to resolved with resolution_summary', async () => {
+    if (!claimId) {
+      console.log('Skipping: claim not created');
+      return;
+    }
+    const { error } = await admin
+      .from('claims')
+      .update({
+        status: 'resolved',
+        resolved_at: new Date().toISOString(),
+        resolution_summary: 'Претензия удовлетворена частично',
+      })
+      .eq('id', claimId);
+
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('claims')
+      .select('status, resolved_at, resolution_summary')
+      .eq('id', claimId)
+      .single();
+
+    expect(data?.status).toBe('resolved');
+    expect(data?.resolved_at).toBeDefined();
+    expect(data?.resolution_summary).toBe('Претензия удовлетворена частично');
   });
 });

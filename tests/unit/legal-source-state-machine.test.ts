@@ -6,6 +6,8 @@ import {
   TEMPLATE_TRANSITIONS,
   PACKAGE_TRANSITIONS,
   APPROVAL_TRANSITIONS,
+  CHANGE_ORDER_TRANSITIONS,
+  CLAIM_TRANSITIONS,
 } from '@/modules/shared/types';
 import type {
   LegalSourceStatus,
@@ -14,6 +16,8 @@ import type {
   ContractTemplateStatus,
   ContractPackageStatus,
   ApprovalStatus,
+  ChangeOrderStatus,
+  ClaimStatus,
 } from '@/modules/shared/types';
 
 describe('Legal Source State Machine', () => {
@@ -374,5 +378,152 @@ describe('Contract Approval Complete Lifecycle', () => {
     status = 'revoked';
 
     expect(APPROVAL_TRANSITIONS[status]).toEqual([]);
+  });
+});
+
+describe('Change Order State Machine', () => {
+  describe('change order transitions', () => {
+    it('draft can transition to requested', () => {
+      expect(CHANGE_ORDER_TRANSITIONS.draft).toContain('requested');
+    });
+
+    it('draft can transition to cancelled', () => {
+      expect(CHANGE_ORDER_TRANSITIONS.draft).toContain('cancelled');
+    });
+
+    it('requested can transition to approved', () => {
+      expect(CHANGE_ORDER_TRANSITIONS.requested).toContain('approved');
+    });
+
+    it('requested can transition to rejected', () => {
+      expect(CHANGE_ORDER_TRANSITIONS.requested).toContain('rejected');
+    });
+
+    it('approved can transition to applied', () => {
+      expect(CHANGE_ORDER_TRANSITIONS.approved).toContain('applied');
+    });
+
+    it('approved can transition to cancelled', () => {
+      expect(CHANGE_ORDER_TRANSITIONS.approved).toContain('cancelled');
+    });
+
+    it('rejected cannot transition', () => {
+      expect(CHANGE_ORDER_TRANSITIONS.rejected).toEqual([]);
+    });
+
+    it('applied cannot transition', () => {
+      expect(CHANGE_ORDER_TRANSITIONS.applied).toEqual([]);
+    });
+
+    it('cancelled cannot transition', () => {
+      expect(CHANGE_ORDER_TRANSITIONS.cancelled).toEqual([]);
+    });
+  });
+
+  describe('change order full lifecycle', () => {
+    it('draft → requested → approved → applied', () => {
+      let status: ChangeOrderStatus = 'draft';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toContain('requested');
+      status = 'requested';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toContain('approved');
+      status = 'approved';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toContain('applied');
+      status = 'applied';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toEqual([]);
+    });
+
+    it('draft → requested → rejected (terminal)', () => {
+      let status: ChangeOrderStatus = 'draft';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toContain('requested');
+      status = 'requested';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toContain('rejected');
+      status = 'rejected';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toEqual([]);
+    });
+
+    it('draft → cancelled (terminal)', () => {
+      let status: ChangeOrderStatus = 'draft';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toContain('cancelled');
+      status = 'cancelled';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toEqual([]);
+    });
+
+    it('approved → cancelled (terminal)', () => {
+      let status: ChangeOrderStatus = 'approved';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toContain('cancelled');
+      status = 'cancelled';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toEqual([]);
+    });
+  });
+});
+
+describe('Claim State Machine', () => {
+  describe('claim transitions', () => {
+    it('open can transition to in_review', () => {
+      expect(CLAIM_TRANSITIONS.open).toContain('in_review');
+    });
+
+    it('open can transition to withdrawn', () => {
+      expect(CLAIM_TRANSITIONS.open).toContain('withdrawn');
+    });
+
+    it('in_review can transition to resolved', () => {
+      expect(CLAIM_TRANSITIONS.in_review).toContain('resolved');
+    });
+
+    it('in_review can transition to withdrawn', () => {
+      expect(CLAIM_TRANSITIONS.in_review).toContain('withdrawn');
+    });
+
+    it('resolved cannot transition', () => {
+      expect(CLAIM_TRANSITIONS.resolved).toEqual([]);
+    });
+
+    it('withdrawn cannot transition', () => {
+      expect(CLAIM_TRANSITIONS.withdrawn).toEqual([]);
+    });
+  });
+
+  describe('claim full lifecycle', () => {
+    it('open → in_review → resolved', () => {
+      let status: ClaimStatus = 'open';
+
+      expect(CLAIM_TRANSITIONS[status]).toContain('in_review');
+      status = 'in_review';
+
+      expect(CLAIM_TRANSITIONS[status]).toContain('resolved');
+      status = 'resolved';
+
+      expect(CLAIM_TRANSITIONS[status]).toEqual([]);
+    });
+
+    it('open → withdrawn (terminal)', () => {
+      let status: ClaimStatus = 'open';
+
+      expect(CLAIM_TRANSITIONS[status]).toContain('withdrawn');
+      status = 'withdrawn';
+
+      expect(CLAIM_TRANSITIONS[status]).toEqual([]);
+    });
+
+    it('in_review → withdrawn (terminal)', () => {
+      let status: ClaimStatus = 'in_review';
+
+      expect(CLAIM_TRANSITIONS[status]).toContain('withdrawn');
+      status = 'withdrawn';
+
+      expect(CLAIM_TRANSITIONS[status]).toEqual([]);
+    });
   });
 });

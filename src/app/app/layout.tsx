@@ -48,7 +48,7 @@ export default function AppLayout({
       <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
           <p className="text-sm text-amber-800">
-            <strong>Этап 4.</strong> Согласование договорных пакетов. Юридически значимая фиксация решений. AI/LLM не подключены.
+            <strong>Этап 5.</strong> Изменения заказа и претензии. Управление изменениями согласованного пакета и претензионный контур. AI/LLM не подключены.
           </p>
         </div>
         {children}

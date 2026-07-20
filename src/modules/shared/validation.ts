@@ -233,3 +233,60 @@ export const transitionContractApprovalStatusSchema = z.object({
 });
 
 export type TransitionContractApprovalStatusInput = z.infer<typeof transitionContractApprovalStatusSchema>;
+
+// ============================================================
+// Stage 5: Change Order commands
+// ============================================================
+
+export const changeOrderStatusSchema = z.enum(['draft', 'requested', 'approved', 'rejected', 'applied', 'cancelled']);
+export const changeTypeSchema = z.enum(['scope', 'price', 'deadline', 'terms', 'other']);
+
+// Create Change Order command
+export const createChangeOrderSchema = z.object({
+  legalCaseId: uuidSchema,
+  contractPackageId: uuidSchema,
+  changeType: changeTypeSchema,
+  deltaAmount: z.string().regex(/^-?[1-9]\d*$/, 'Must be a non-zero integer string'),
+  reason: z.string().min(1).max(2000),
+  metadata: z.record(z.string(), z.unknown()).default({}),
+});
+
+export type CreateChangeOrderInput = z.infer<typeof createChangeOrderSchema>;
+
+// Transition Change Order Status command
+export const transitionChangeOrderStatusSchema = z.object({
+  changeOrderId: uuidSchema,
+  targetStatus: changeOrderStatusSchema,
+  notes: z.string().max(2000).optional(),
+});
+
+export type TransitionChangeOrderStatusInput = z.infer<typeof transitionChangeOrderStatusSchema>;
+
+// ============================================================
+// Stage 5: Claim commands
+// ============================================================
+
+export const claimStatusSchema = z.enum(['open', 'in_review', 'resolved', 'withdrawn']);
+export const claimTypeSchema = z.enum(['quality', 'deadline', 'payment', 'scope', 'other']);
+
+// Create Claim command
+export const createClaimSchema = z.object({
+  legalCaseId: uuidSchema,
+  contractPackageId: uuidSchema.nullable().optional(),
+  changeOrderId: uuidSchema.nullable().optional(),
+  type: claimTypeSchema,
+  metadata: z.record(z.string(), z.unknown()).default({}),
+});
+
+export type CreateClaimInput = z.infer<typeof createClaimSchema>;
+
+// Transition Claim Status command
+export const transitionClaimStatusSchema = z.object({
+  claimId: uuidSchema,
+  targetStatus: claimStatusSchema,
+  resolutionSummary: z.string().max(2000).optional(),
+  resolutionRuleIds: z.array(uuidSchema).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export type TransitionClaimStatusInput = z.infer<typeof transitionClaimStatusSchema>;

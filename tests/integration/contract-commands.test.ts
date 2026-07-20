@@ -3,9 +3,11 @@ import {
   TEMPLATE_TRANSITIONS,
   PACKAGE_TRANSITIONS,
   APPROVAL_TRANSITIONS,
+  CHANGE_ORDER_TRANSITIONS,
+  CLAIM_TRANSITIONS,
   ROLE_PERMISSIONS,
 } from '@/modules/shared/types';
-import type { ContractTemplateStatus, ContractPackageStatus, ApprovalStatus } from '@/modules/shared/types';
+import type { ContractTemplateStatus, ContractPackageStatus, ApprovalStatus, ChangeOrderStatus, ClaimStatus } from '@/modules/shared/types';
 import {
   createContractTemplateSchema,
   createContractPackageSchema,
@@ -13,6 +15,10 @@ import {
   transitionContractPackageStatusSchema,
   createContractApprovalSchema,
   transitionContractApprovalStatusSchema,
+  createChangeOrderSchema,
+  transitionChangeOrderStatusSchema,
+  createClaimSchema,
+  transitionClaimStatusSchema,
 } from '@/modules/shared/validation';
 
 describe('Contract Templates & Packages Integration', () => {
@@ -328,6 +334,189 @@ describe('Contract Templates & Packages Integration', () => {
       expect(ROLE_PERMISSIONS.view_approvals.designer).toBe(true);
       expect(ROLE_PERMISSIONS.view_approvals.legal_reviewer).toBe(true);
       expect(ROLE_PERMISSIONS.view_approvals.observer).toBe(true);
+    });
+  });
+
+  describe('change order state machine logic', () => {
+    it('change order lifecycle: draft → requested → approved → applied', () => {
+      let status: ChangeOrderStatus = 'draft';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toContain('requested');
+      status = 'requested';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toContain('approved');
+      status = 'approved';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toContain('applied');
+      status = 'applied';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toEqual([]);
+    });
+
+    it('change order rejection: draft → requested → rejected', () => {
+      let status: ChangeOrderStatus = 'draft';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toContain('requested');
+      status = 'requested';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toContain('rejected');
+      status = 'rejected';
+
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toEqual([]);
+    });
+
+    it('change order cancellation from draft', () => {
+      let status: ChangeOrderStatus = 'draft';
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toContain('cancelled');
+      status = 'cancelled';
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toEqual([]);
+    });
+
+    it('change order cancellation from approved', () => {
+      let status: ChangeOrderStatus = 'approved';
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toContain('cancelled');
+      status = 'cancelled';
+      expect(CHANGE_ORDER_TRANSITIONS[status]).toEqual([]);
+    });
+  });
+
+  describe('change order validation schemas', () => {
+    it('createChangeOrderSchema accepts valid input', () => {
+      const result = createChangeOrderSchema.safeParse({
+        legalCaseId: '550e8400-e29b-41d4-a716-446655440000',
+        contractPackageId: '550e8400-e29b-41d4-a716-446655440001',
+        changeType: 'price',
+        deltaAmount: '500000',
+        reason: 'Изменение стоимости',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('createChangeOrderSchema rejects zero delta', () => {
+      const result = createChangeOrderSchema.safeParse({
+        legalCaseId: '550e8400-e29b-41d4-a716-446655440000',
+        contractPackageId: '550e8400-e29b-41d4-a716-446655440001',
+        changeType: 'price',
+        deltaAmount: '0',
+        reason: 'Test',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('transitionChangeOrderStatusSchema accepts valid input', () => {
+      const result = transitionChangeOrderStatusSchema.safeParse({
+        changeOrderId: '550e8400-e29b-41d4-a716-446655440000',
+        targetStatus: 'requested',
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('change order permissions', () => {
+    it('owner and manager can manage changes', () => {
+      expect(ROLE_PERMISSIONS.manage_changes.owner).toBe(true);
+      expect(ROLE_PERMISSIONS.manage_changes.manager).toBe(true);
+      expect(ROLE_PERMISSIONS.manage_changes.legal_reviewer).toBe(false);
+      expect(ROLE_PERMISSIONS.manage_changes.observer).toBe(false);
+    });
+
+    it('owner and legal_reviewer can approve changes', () => {
+      expect(ROLE_PERMISSIONS.approve_changes.owner).toBe(true);
+      expect(ROLE_PERMISSIONS.approve_changes.manager).toBe(false);
+      expect(ROLE_PERMISSIONS.approve_changes.legal_reviewer).toBe(true);
+      expect(ROLE_PERMISSIONS.approve_changes.observer).toBe(false);
+    });
+
+    it('only owner can apply changes', () => {
+      expect(ROLE_PERMISSIONS.apply_changes.owner).toBe(true);
+      expect(ROLE_PERMISSIONS.apply_changes.manager).toBe(false);
+      expect(ROLE_PERMISSIONS.apply_changes.legal_reviewer).toBe(false);
+    });
+
+    it('all roles can view changes', () => {
+      expect(ROLE_PERMISSIONS.view_changes.owner).toBe(true);
+      expect(ROLE_PERMISSIONS.view_changes.manager).toBe(true);
+      expect(ROLE_PERMISSIONS.view_changes.designer).toBe(true);
+      expect(ROLE_PERMISSIONS.view_changes.legal_reviewer).toBe(true);
+      expect(ROLE_PERMISSIONS.view_changes.observer).toBe(true);
+    });
+  });
+
+  describe('claim state machine logic', () => {
+    it('claim lifecycle: open → in_review → resolved', () => {
+      let status: ClaimStatus = 'open';
+
+      expect(CLAIM_TRANSITIONS[status]).toContain('in_review');
+      status = 'in_review';
+
+      expect(CLAIM_TRANSITIONS[status]).toContain('resolved');
+      status = 'resolved';
+
+      expect(CLAIM_TRANSITIONS[status]).toEqual([]);
+    });
+
+    it('claim withdrawal from open', () => {
+      let status: ClaimStatus = 'open';
+      expect(CLAIM_TRANSITIONS[status]).toContain('withdrawn');
+      status = 'withdrawn';
+      expect(CLAIM_TRANSITIONS[status]).toEqual([]);
+    });
+
+    it('claim withdrawal from in_review', () => {
+      let status: ClaimStatus = 'in_review';
+      expect(CLAIM_TRANSITIONS[status]).toContain('withdrawn');
+      status = 'withdrawn';
+      expect(CLAIM_TRANSITIONS[status]).toEqual([]);
+    });
+  });
+
+  describe('claim validation schemas', () => {
+    it('createClaimSchema accepts valid input', () => {
+      const result = createClaimSchema.safeParse({
+        legalCaseId: '550e8400-e29b-41d4-a716-446655440000',
+        type: 'quality',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('createClaimSchema rejects invalid type', () => {
+      const result = createClaimSchema.safeParse({
+        legalCaseId: '550e8400-e29b-41d4-a716-446655440000',
+        type: 'invalid',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('transitionClaimStatusSchema accepts valid input', () => {
+      const result = transitionClaimStatusSchema.safeParse({
+        claimId: '550e8400-e29b-41d4-a716-446655440000',
+        targetStatus: 'in_review',
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('claim permissions', () => {
+    it('owner, manager, legal_reviewer can manage claims', () => {
+      expect(ROLE_PERMISSIONS.manage_claims.owner).toBe(true);
+      expect(ROLE_PERMISSIONS.manage_claims.manager).toBe(true);
+      expect(ROLE_PERMISSIONS.manage_claims.legal_reviewer).toBe(true);
+      expect(ROLE_PERMISSIONS.manage_claims.observer).toBe(false);
+    });
+
+    it('owner and legal_reviewer can resolve claims', () => {
+      expect(ROLE_PERMISSIONS.resolve_claims.owner).toBe(true);
+      expect(ROLE_PERMISSIONS.resolve_claims.manager).toBe(false);
+      expect(ROLE_PERMISSIONS.resolve_claims.legal_reviewer).toBe(true);
+      expect(ROLE_PERMISSIONS.resolve_claims.observer).toBe(false);
+    });
+
+    it('all roles can view claims', () => {
+      expect(ROLE_PERMISSIONS.view_claims.owner).toBe(true);
+      expect(ROLE_PERMISSIONS.view_claims.manager).toBe(true);
+      expect(ROLE_PERMISSIONS.view_claims.designer).toBe(true);
+      expect(ROLE_PERMISSIONS.view_claims.legal_reviewer).toBe(true);
+      expect(ROLE_PERMISSIONS.view_claims.observer).toBe(true);
     });
   });
 });
