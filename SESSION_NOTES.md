@@ -645,7 +645,7 @@ Real-DB тесты (30 tests) подтверждают:
 | `public/_headers` | Кэширование статических ассетов |
 | `eslint.config.mjs` | Добавлен `.open-next/**` в ignores |
 | `package.json` | `@opennextjs/cloudflare`, `wrangler`, скрипты деплоя |
-| `docs/deployment/cloudflare-pages.md` | Документация деплоя |
+| `docs/deployment/cloudflare-workers.md` | Документация деплоя |
 
 ### Команды
 
@@ -671,7 +671,7 @@ npm run cf:deploy      # Deploy на Cloudflare Workers
 
 ### Cloudflare Dashboard — пошагово
 
-1. R2 → Create bucket: `mebel-legal-kz-opennext-cache`
+1. R2 → Create bucket: `mebel-legal-cache`
 2. Workers & Pages → Create → Pages → Connect to Git
 3. Build: `npm run cf:build`, output: `.open-next`, Node: `22`
 4. Settings → Variables: 3 env vars (2 public + 1 secret)
@@ -696,5 +696,5 @@ npm run cf:deploy      # Deploy на Cloudflare Workers
 
 - Только внутреннее использование (без custom domain)
 - Нет реальных договоров и персональных данных
-- R2 bucket обязателен для incremental cache
+- R2 bucket опционален (проект не использует ISR, но настроен для будущего)
 - Windows warning — OpenNext рекомендует WSL для продакшена

@@ -1,4 +1,4 @@
-# Cloudflare Deployment — MebelLegal KZ
+# Cloudflare Workers Deployment — MebelLegal KZ
 
 ## Deployment Target
 
@@ -39,6 +39,14 @@ npm run cf:build
 npm run cf:deploy
 ```
 
+## R2 Incremental Cache
+
+R2 bucket `mebel-legal-cache` is configured in `wrangler.jsonc` and `open-next.config.ts` for OpenNext's incremental cache.
+
+**Currently optional**: the project does not use ISR (Incremental Static Regeneration). All routes are server-rendered on demand (`ƒ`). R2 is configured for future use and does not harm the current setup.
+
+If you want to skip R2 for now, remove the `r2_buckets` section from `wrangler.jsonc` and the `r2IncrementalCache` import from `open-next.config.ts`.
+
 ## Environment Variables
 
 | Variable | Public/Server | Required | Source | Notes |
@@ -74,7 +82,7 @@ In Supabase Dashboard → Authentication → URL Configuration:
 
 ### 1. Create R2 Bucket (for incremental cache)
 
-Workers & Pages → R2 → Create bucket → Name: `mebel-legal-kz-opennext-cache`
+Workers & Pages → R2 → Create bucket → Name: `mebel-legal-cache`
 
 ### 2. Connect GitHub Repo
 
