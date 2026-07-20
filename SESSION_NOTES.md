@@ -455,3 +455,77 @@ Real-DB тесты (25 tests) подтверждают:
 ### Следующий шаг
 
 Этап 3 завершён и валидирован. Ожидает финальной приёмки владельцем.
+
+---
+
+## Сессия: Этап 4 — Согласования пакетов договоров
+
+**Дата:** 20 июля 2026 года
+**Статус:** Завершена
+
+### Миграции — применение
+
+Миграции 018–021 применены к Supabase проекту `uctedpswcbcwufzegvhl` через SQL Editor.
+Способ: пользователь выполнил `supabase/migrations/018_021_combined_stage4.sql` в dashboard → SQL Editor → Run → "Success. No rows returned".
+
+Канонический путь миграций — отдельные файлы:
+- `018_contract_approvals.sql` — таблица contract_approvals (CHECK constraint, append-only DELETE=false)
+- `019_rls_contract_approvals.sql` — RLS политики (SELECT/INSERT/UPDATE, DELETE=false)
+- `020_grants_contract_approvals.sql` — GRANT/REVOKE для authenticated + service_role
+- `021_indexes_contract_approvals.sql` — 6 индексов
+
+### Доказательства
+
+Real-DB тесты (30 tests) подтверждают:
+- Таблица `contract_approvals` существует и доступна
+- INSERT/UPDATE/terminal state UPDATE работают на уровне БД
+- CHECK constraint `check_decided_fields` применяется (decided_by/decided_at обязательны для terminal states)
+- RLS блокирует anon-клиентов
+
+### Что сделано
+
+- `contract_approvals` таблица с CHECK constraint, append-only DELETE=false
+- `ApprovalService` — create, transition (pending→approved/rejected/revoked), get, list
+- Self-approval prevention (requested_by ≠ decided_by) на уровне сервиса
+- Single active approval per package (программная проверка)
+- Notes required для reject/revoke (precondition check)
+- 3 новые UI страницы: /approvals, /approvals/[id], /approvals/new
+- 3 новые permissions: manage_approvals (owner+manager), decide_approvals (owner+legal_reviewer), view_approvals (all)
+- Навигация обновлена: "Согласования" + "Этап 4"
+
+### Foundation Check (Этап 4)
+
+- [x] Границы не нарушены.
+- [x] Tenant isolation и RLS сохранены.
+- [x] Серверная авторизация присутствует.
+- [x] Деньги в тийинах (bigint).
+- [x] State transitions через доменную команду.
+- [x] Идемпотентность соблюдена.
+- [x] Audit log append-only.
+- [x] Версионирование, не перезапись.
+- [x] AI не используется.
+- [x] Нет реальных данных в Git.
+- [x] Tests по риску добавлены.
+- [x] Этап 4 соответствует разрешённому.
+
+### Валидация (Этап 4)
+
+| Команда | Статус |
+|---|---|
+| Lint | ✅ 0 errors |
+| Typecheck | ✅ 0 errors |
+| Unit tests | ✅ 154/154 |
+| Integration tests | ✅ 69/69 |
+| Security tests (mock) | ✅ 115/115 |
+| Security tests (real-DB) | ✅ 30/30 |
+| Build | ✅ 21 routes |
+
+**Общий итог тестов: 398** (154 unit + 69 integration + 145 security + 30 real-DB)
+
+### Git commits (Этап 4)
+
+- `d6ac669` — Stage 4 final (contract approvals - domain, UI, tests)
+
+### Следующий шаг
+
+Этап 4 завершён и валидирован. Ожидает финальной приёмки владельцем.
