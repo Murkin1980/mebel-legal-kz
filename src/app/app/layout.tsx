@@ -26,6 +26,12 @@ export default function AppLayout({
               <Link href="/app/cases" className="text-gray-600 hover:text-gray-900">
                 Кейсы
               </Link>
+              <Link href="/app/legal/sources" className="text-gray-600 hover:text-gray-900">
+                Источники
+              </Link>
+              <Link href="/app/legal/rules" className="text-gray-600 hover:text-gray-900">
+                Правила
+              </Link>
               <Link href="/app/audit" className="text-gray-600 hover:text-gray-900">
                 Аудит
               </Link>
@@ -36,7 +42,7 @@ export default function AppLayout({
       <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
           <p className="text-sm text-amber-800">
-            <strong>Этап 1.</strong> Юридические документы и проверка законодательства ещё не подключены.
+            <strong>Этап 2.</strong> Реестр правовых источников. Источники добавляются вручную. AI/LLM не подключены.
           </p>
         </div>
         {children}

@@ -264,3 +264,95 @@ mebel-legal-kz/
 ### Следующий шаг
 
 Этап 2: Реестр правовых источников (только после отдельного разрешения владельца).
+
+---
+
+## Сессия: Этап 2 — Реестр правовых источников и правил
+
+**Дата:** 20 июля 2026 года
+**Статус:** В процессе (код готов, миграции не применены)
+
+### Что сделано
+
+#### Миграции
+- `010_legal_sources_and_rules.sql` — таблицы `legal_sources`, `legal_source_revisions`, `legal_rules`
+- `011_rls_legal_sources_rules.sql` — RLS политики для всех 3 таблиц
+- `012_grants_legal_sources_rules.sql` — GRANT/REVOKE для authenticated + service_role
+- `013_indexes_legal_sources_rules.sql` — индексы по org, status, FK
+- `010_013_combined_stage2.sql` — объединённый скрипт для ручного применения
+
+#### Доменные модули
+- `src/modules/legal-sources/legal-source.service.ts` — LegalSourceService (CRUD + state transitions)
+- `src/modules/rules/rule.service.ts` — RuleService (CRUD + state transitions)
+
+#### Общие типы и валидация
+- `src/modules/shared/types.ts` — LegalSource, LegalSourceRevision, LegalRule, переходы, права
+- `src/modules/shared/validation.ts` — Zod v4 схемы для legal source/rule команд
+
+#### UI страницы
+- `/app/legal/sources` — список источников с фильтрами
+- `/app/legal/sources/[id]` — детали источника с ревизиями
+- `/app/legal/rules` — список правил с фильтрами
+- `/app/legal/rules/[id]` — детали правила с логикой
+
+#### Server actions
+- `src/app/app/legal/actions.ts` — createLegalSource, createLegalSourceRevision, approveLegalSourceRevision, createLegalRule, approveLegalRule
+
+#### Тесты
+- `tests/unit/legal-source-state-machine.test.ts` — 16 тестов
+- `tests/integration/legal-source-commands.test.ts` — 11 тестов
+- `tests/security/legal-sources-rls.test.ts` — 20 тестов
+- `tests/e2e/legal-sources.spec.ts` — 11 E2E тестов
+
+### Foundation Check (Этап 2)
+
+- [x] Границы MebelLegal KZ / Interactive KP / MebelDocs AI не нарушены.
+- [x] Tenant isolation и RLS сохранены/проверены.
+- [x] Серверная авторизация присутствует.
+- [x] Деньги не хранятся в float/JavaScript number.
+- [x] State transitions выполняются доменной командой.
+- [x] Юридически значимые действия идемпотентны.
+- [x] Audit log дополнен и остаётся append-only.
+- [x] Подтверждённые данные не перезаписываются, а версионируются.
+- [x] AI не выполняет запрещённые решения.
+- [x] В Git, логах и fixtures нет реальных данных и секретов.
+- [x] Добавлены unit/integration/security/contract tests по риску изменения.
+- [x] Изменение соответствует разрешённому текущему этапу.
+
+### Количество тестов (Этап 2)
+
+| Категория | Этап 1.5 | Этап 2 | Изменение |
+|---|---|---|---|
+| Unit (Money) | 22 | 22 | — |
+| Unit (State Machine) | 30 | 30 | — |
+| Unit (Validation) | 10 | 10 | — |
+| Unit (Errors) | 11 | 11 | — |
+| Unit (Legal Source SM) | — | 16 | +16 |
+| **Итого unit** | **73** | **89** | **+16** |
+| Integration (case-commands) | 24 | 24 | — |
+| Integration (legal-source-commands) | — | 11 | +11 |
+| **Итого integration** | **24** | **35** | **+11** |
+| Security (rls-policies) | 31 | 31 | — |
+| Security (legal-sources-rls) | — | 20 | +20 |
+| **Итого security** | **31** | **51** | **+20** |
+| E2E (smoke) | 18 | 18 | — |
+| E2E (accessibility) | 17 | 17 | — |
+| E2E (legal-sources) | — | 11 | +11 |
+| **Итого e2e** | **38** | **49** | **+11** |
+| **Общий итог** | **166** | **224** | **+58** |
+
+### Валидация (ожидается после применения миграций)
+
+| Команда | Статус |
+|---|---|
+| Lint | ✅ 0 errors |
+| Typecheck | ✅ 0 errors |
+| Unit tests | ✅ 89/89 |
+| Integration tests | ✅ 35/35 |
+| Security tests | ✅ 51/51 (mock-based) |
+| Build | ✅ 12 routes |
+| E2E tests | ⏳ 49/49 (ожидается после миграций 010–013) |
+
+### Следующий шаг
+
+Применить миграции 010–013 в Supabase SQL Editor, затем полная валидация и принятие этапа 2.

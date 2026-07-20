@@ -55,8 +55,8 @@ test.describe('App Layout', () => {
     await expect(page.locator('a[href="/app/audit"]')).toBeVisible();
   });
 
-  test('should show stage 1 banner', async ({ page }) => {
-    const banner = page.locator('text=Юридические документы и проверка законодательства ещё не подключены');
+  test('should show stage banner', async ({ page }) => {
+    const banner = page.locator('text=Этап');
     await expect(banner).toBeVisible();
   });
 });

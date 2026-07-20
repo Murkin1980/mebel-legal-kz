@@ -45,6 +45,12 @@ export const userRoleSchema = z.enum([
 
 export const caseSourceTypeSchema = z.enum(['manual', 'interactive_kp', 'import']);
 
+// Stage 2: Legal Source & Rule enums
+export const legalSourceStatusSchema = z.enum(['draft', 'approved', 'deprecated']);
+export const sourceSystemSchema = z.enum(['adilet', 'internal', 'other']);
+export const legalSourceRevisionStatusSchema = z.enum(['draft', 'under_review', 'approved', 'retired']);
+export const legalRuleStatusSchema = z.enum(['draft', 'under_review', 'approved', 'retired']);
+
 // Create Organization command
 export const createOrganizationSchema = z.object({
   name: z.string().min(1).max(255),
@@ -105,3 +111,56 @@ export const transitionLegalCaseStatusSchema = z.object({
 });
 
 export type TransitionLegalCaseStatusInput = z.infer<typeof transitionLegalCaseStatusSchema>;
+
+// ============================================================
+// Stage 2: Legal Source commands
+// ============================================================
+
+// Create Legal Source command
+export const createLegalSourceSchema = z.object({
+  canonicalUrl: z.string().min(1).max(1000),
+  title: z.string().min(1).max(500),
+  sourceSystem: sourceSystemSchema,
+});
+
+export type CreateLegalSourceInput = z.infer<typeof createLegalSourceSchema>;
+
+// Create Legal Source Revision command
+export const createLegalSourceRevisionSchema = z.object({
+  sourceId: uuidSchema,
+  revisionNumber: z.number().int().positive(),
+  effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD format').nullable().optional(),
+  effectiveTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD format').nullable().optional(),
+  contentHash: z.string().min(1).max(255),
+  metadata: z.record(z.string(), z.unknown()).default({}),
+});
+
+export type CreateLegalSourceRevisionInput = z.infer<typeof createLegalSourceRevisionSchema>;
+
+// Approve Legal Source Revision command
+export const approveLegalSourceRevisionSchema = z.object({
+  sourceId: uuidSchema,
+  revisionId: uuidSchema,
+  sourceStatus: legalSourceStatusSchema.default('approved'),
+});
+
+export type ApproveLegalSourceRevisionInput = z.infer<typeof approveLegalSourceRevisionSchema>;
+
+// Create Legal Rule command
+export const createLegalRuleSchema = z.object({
+  code: z.string().min(1).max(100).regex(/^[A-Z0-9_]+$/, 'Code must be uppercase alphanumeric with underscores'),
+  title: z.string().min(1).max(500),
+  description: z.string().min(1).max(2000),
+  sourceRevisionId: uuidSchema,
+  logic: z.record(z.string(), z.unknown()).default({}),
+});
+
+export type CreateLegalRuleInput = z.infer<typeof createLegalRuleSchema>;
+
+// Approve Legal Rule command
+export const approveLegalRuleSchema = z.object({
+  ruleId: uuidSchema,
+  targetStatus: legalRuleStatusSchema,
+});
+
+export type ApproveLegalRuleInput = z.infer<typeof approveLegalRuleSchema>;

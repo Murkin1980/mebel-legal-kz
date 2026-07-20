@@ -26,6 +26,12 @@ export type CaseStatus =
 
 export type CaseSourceType = 'manual' | 'interactive_kp' | 'import';
 
+// Stage 2: Legal Sources & Rules
+export type LegalSourceStatus = 'draft' | 'approved' | 'deprecated';
+export type SourceSystem = 'adilet' | 'internal' | 'other';
+export type LegalSourceRevisionStatus = 'draft' | 'under_review' | 'approved' | 'retired';
+export type LegalRuleStatus = 'draft' | 'under_review' | 'approved' | 'retired';
+
 export interface Organization {
   id: string;
   name: string;
@@ -81,6 +87,47 @@ export interface AuditEvent {
   request_correlation_id: string | null;
 }
 
+// Stage 2: Legal Source
+export interface LegalSource {
+  id: string;
+  organization_id: string;
+  canonical_url: string;
+  title: string;
+  source_system: SourceSystem;
+  status: LegalSourceStatus;
+  is_allowed: boolean;
+  created_at: string;
+  created_by: string;
+}
+
+// Stage 2: Legal Source Revision
+export interface LegalSourceRevision {
+  id: string;
+  source_id: string;
+  revision_number: number;
+  effective_from: string | null;
+  effective_to: string | null;
+  fetched_at: string;
+  fetched_by: string;
+  content_hash: string;
+  status: LegalSourceRevisionStatus;
+  metadata: Record<string, unknown>;
+}
+
+// Stage 2: Legal Rule
+export interface LegalRule {
+  id: string;
+  organization_id: string;
+  code: string;
+  title: string;
+  description: string;
+  source_revision_id: string;
+  status: LegalRuleStatus;
+  logic: Record<string, unknown>;
+  created_at: string;
+  created_by: string;
+}
+
 /**
  * Allowed state transitions for legal cases
  */
@@ -92,6 +139,35 @@ export const CASE_TRANSITIONS: Record<CaseStatus, CaseStatus[]> = {
   suspended: ['approved'],
   closed: [],
   cancelled: [],
+};
+
+/**
+ * Allowed state transitions for legal sources
+ */
+export const LEGAL_SOURCE_TRANSITIONS: Record<LegalSourceStatus, LegalSourceStatus[]> = {
+  draft: ['approved'],
+  approved: ['deprecated'],
+  deprecated: [],
+};
+
+/**
+ * Allowed state transitions for legal source revisions
+ */
+export const REVISION_TRANSITIONS: Record<LegalSourceRevisionStatus, LegalSourceRevisionStatus[]> = {
+  draft: ['under_review'],
+  under_review: ['approved'],
+  approved: ['retired'],
+  retired: [],
+};
+
+/**
+ * Allowed state transitions for legal rules
+ */
+export const LEGAL_RULE_TRANSITIONS: Record<LegalRuleStatus, LegalRuleStatus[]> = {
+  draft: ['under_review'],
+  under_review: ['approved'],
+  approved: ['retired'],
+  retired: [],
 };
 
 /**
@@ -148,6 +224,42 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     observer: false,
   },
   view_audit_log: {
+    owner: true,
+    manager: true,
+    designer: true,
+    legal_reviewer: true,
+    observer: true,
+  },
+  // Stage 2: Legal Sources & Rules permissions
+  manage_legal_sources: {
+    owner: true,
+    manager: true,
+    designer: false,
+    legal_reviewer: true,
+    observer: false,
+  },
+  approve_legal_source_revision: {
+    owner: true,
+    manager: false,
+    designer: false,
+    legal_reviewer: true,
+    observer: false,
+  },
+  approve_legal_rule: {
+    owner: true,
+    manager: false,
+    designer: false,
+    legal_reviewer: true,
+    observer: false,
+  },
+  view_legal_sources: {
+    owner: true,
+    manager: true,
+    designer: true,
+    legal_reviewer: true,
+    observer: true,
+  },
+  view_legal_rules: {
     owner: true,
     manager: true,
     designer: true,
