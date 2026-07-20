@@ -14,6 +14,7 @@ export type ErrorCode =
   | 'INVALID_STATE_TRANSITION'
   | 'OPTIMISTIC_CONCURRENCY_CONFLICT'
   | 'IDEMPOTENCY_CONFLICT'
+  | 'PRECONDITION_FAILED'
   | 'INTERNAL_ERROR';
 
 export class AppError extends Error {
@@ -95,4 +96,8 @@ export function idempotencyConflict(): AppError {
 
 export function internalError(message = 'Internal error'): AppError {
   return new AppError('INTERNAL_ERROR', message, 500);
+}
+
+export function preconditionFailed(message: string): AppError {
+  return new AppError('PRECONDITION_FAILED', message, 412);
 }

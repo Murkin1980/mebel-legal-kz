@@ -32,6 +32,15 @@ export type SourceSystem = 'adilet' | 'internal' | 'other';
 export type LegalSourceRevisionStatus = 'draft' | 'under_review' | 'approved' | 'retired';
 export type LegalRuleStatus = 'draft' | 'under_review' | 'approved' | 'retired';
 
+// Stage 3: Contract Templates & Packages
+export type ContractTemplateStatus = 'draft' | 'expert_review' | 'published' | 'retired';
+export type ContractPackageStatus =
+  | 'draft'
+  | 'under_review'
+  | 'approved_for_internal_use'
+  | 'published_for_consultation'
+  | 'retired';
+
 export interface Organization {
   id: string;
   name: string;
@@ -128,6 +137,33 @@ export interface LegalRule {
   created_by: string;
 }
 
+// Stage 3: Contract Template
+export interface ContractTemplate {
+  id: string;
+  organization_id: string;
+  code: string;
+  title: string;
+  customer_type: CustomerType;
+  project_type: ProjectType;
+  status: ContractTemplateStatus;
+  schema: Record<string, unknown>;
+  created_at: string;
+  created_by: string;
+}
+
+// Stage 3: Contract Package
+export interface ContractPackage {
+  id: string;
+  legal_case_id: string;
+  template_code: string;
+  version: number;
+  status: ContractPackageStatus;
+  content_snapshot: Record<string, unknown>;
+  source_revision_ids: string[];
+  created_at: string;
+  created_by: string;
+}
+
 /**
  * Allowed state transitions for legal cases
  */
@@ -167,6 +203,27 @@ export const LEGAL_RULE_TRANSITIONS: Record<LegalRuleStatus, LegalRuleStatus[]> 
   draft: ['under_review'],
   under_review: ['approved'],
   approved: ['retired'],
+  retired: [],
+};
+
+/**
+ * Allowed state transitions for contract templates
+ */
+export const TEMPLATE_TRANSITIONS: Record<ContractTemplateStatus, ContractTemplateStatus[]> = {
+  draft: ['expert_review', 'retired'],
+  expert_review: ['published', 'retired'],
+  published: ['retired'],
+  retired: [],
+};
+
+/**
+ * Allowed state transitions for contract packages
+ */
+export const PACKAGE_TRANSITIONS: Record<ContractPackageStatus, ContractPackageStatus[]> = {
+  draft: ['under_review', 'retired'],
+  under_review: ['approved_for_internal_use', 'retired'],
+  approved_for_internal_use: ['published_for_consultation', 'retired'],
+  published_for_consultation: ['retired'],
   retired: [],
 };
 
@@ -260,6 +317,56 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     observer: true,
   },
   view_legal_rules: {
+    owner: true,
+    manager: true,
+    designer: true,
+    legal_reviewer: true,
+    observer: true,
+  },
+  // Stage 3: Contract Templates & Packages permissions
+  manage_templates: {
+    owner: true,
+    manager: true,
+    designer: false,
+    legal_reviewer: true,
+    observer: false,
+  },
+  publish_template: {
+    owner: true,
+    manager: false,
+    designer: false,
+    legal_reviewer: true,
+    observer: false,
+  },
+  view_templates: {
+    owner: true,
+    manager: true,
+    designer: true,
+    legal_reviewer: true,
+    observer: true,
+  },
+  manage_packages: {
+    owner: true,
+    manager: true,
+    designer: false,
+    legal_reviewer: true,
+    observer: false,
+  },
+  approve_package: {
+    owner: true,
+    manager: false,
+    designer: false,
+    legal_reviewer: true,
+    observer: false,
+  },
+  publish_package: {
+    owner: true,
+    manager: false,
+    designer: false,
+    legal_reviewer: true,
+    observer: false,
+  },
+  view_packages: {
     owner: true,
     manager: true,
     designer: true,

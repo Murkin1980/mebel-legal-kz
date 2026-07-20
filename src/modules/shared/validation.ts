@@ -164,3 +164,48 @@ export const approveLegalRuleSchema = z.object({
 });
 
 export type ApproveLegalRuleInput = z.infer<typeof approveLegalRuleSchema>;
+
+// ============================================================
+// Stage 3: Contract Template commands
+// ============================================================
+
+export const templateStatusSchema = z.enum(['draft', 'expert_review', 'published', 'retired']);
+export const packageStatusSchema = z.enum(['draft', 'under_review', 'approved_for_internal_use', 'published_for_consultation', 'retired']);
+
+// Create Contract Template command
+export const createContractTemplateSchema = z.object({
+  code: z.string().min(1).max(100).regex(/^[A-Z0-9_]+$/, 'Code must be uppercase alphanumeric with underscores'),
+  title: z.string().min(1).max(500),
+  customerType: customerTypeSchema,
+  projectType: projectTypeSchema,
+  schema: z.record(z.string(), z.unknown()).default({}),
+});
+
+export type CreateContractTemplateInput = z.infer<typeof createContractTemplateSchema>;
+
+// Transition Contract Template Status command
+export const transitionContractTemplateStatusSchema = z.object({
+  templateId: uuidSchema,
+  targetStatus: templateStatusSchema,
+});
+
+export type TransitionContractTemplateStatusInput = z.infer<typeof transitionContractTemplateStatusSchema>;
+
+// Create Contract Package command
+export const createContractPackageSchema = z.object({
+  legalCaseId: uuidSchema,
+  templateCode: z.string().min(1).max(100),
+  contentSnapshot: z.record(z.string(), z.unknown()).default({}),
+  sourceRevisionIds: z.array(uuidSchema).default([]),
+});
+
+export type CreateContractPackageInput = z.infer<typeof createContractPackageSchema>;
+
+// Transition Contract Package Status command
+export const transitionContractPackageStatusSchema = z.object({
+  packageId: uuidSchema,
+  legalCaseId: uuidSchema,
+  targetStatus: packageStatusSchema,
+});
+
+export type TransitionContractPackageStatusInput = z.infer<typeof transitionContractPackageStatusSchema>;
