@@ -2,7 +2,7 @@
  * Shared types for MebelLegal KZ.
  */
 
-export type UserRole = 'owner' | 'manager' | 'designer' | 'legal_reviewer' | 'observer';
+export type UserRole = 'owner' | 'manager' | 'designer' | 'legal_reviewer' | 'operations' | 'observer';
 
 export type MembershipStatus = 'invited' | 'active' | 'disabled';
 
@@ -51,6 +51,24 @@ export type ChangeType = 'scope' | 'price' | 'deadline' | 'terms' | 'other';
 // Stage 5: Claims
 export type ClaimStatus = 'open' | 'in_review' | 'resolved' | 'withdrawn';
 export type ClaimType = 'quality' | 'deadline' | 'payment' | 'scope' | 'other';
+
+// Stage 6: Contract Execution Phases
+export type ExecutionPhaseName =
+  | 'drafting'
+  | 'internal_review'
+  | 'client_negotiation'
+  | 'signed'
+  | 'in_production'
+  | 'delivered'
+  | 'archived';
+
+export type ExecutionPhaseStatus = 'active' | 'on_hold' | 'closed';
+
+export type CheckpointStatus = 'pending' | 'in_progress' | 'completed' | 'reopened';
+
+export type CheckpointAssignedRole = 'owner' | 'manager' | 'legal_reviewer' | 'operations';
+
+export type PaymentStatus = 'pending' | 'partial' | 'paid' | 'overdue';
 
 export interface Organization {
   id: string;
@@ -224,6 +242,56 @@ export interface Claim {
   metadata: Record<string, unknown>;
 }
 
+// Stage 6: Contract Execution Phase
+export interface ContractExecutionPhase {
+  id: string;
+  organization_id: string;
+  legal_case_id: string;
+  contract_package_id: string;
+  current_phase: ExecutionPhaseName;
+  status: ExecutionPhaseStatus;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string;
+  metadata: Record<string, unknown>;
+}
+
+// Stage 6: Execution Checkpoint
+export interface ExecutionCheckpoint {
+  id: string;
+  organization_id: string;
+  execution_phase_id: string;
+  name: string;
+  description: string | null;
+  status: CheckpointStatus;
+  assigned_role: CheckpointAssignedRole | null;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string;
+  completed_at: string | null;
+  completed_by: string | null;
+  metadata: Record<string, unknown>;
+}
+
+// Stage 6: Execution Payments Summary
+export interface ExecutionPaymentsSummary {
+  id: string;
+  organization_id: string;
+  legal_case_id: string;
+  contract_package_id: string;
+  total_amount: string;
+  paid_amount: string;
+  status: PaymentStatus;
+  last_payment_at: string | null;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string;
+  metadata: Record<string, unknown>;
+}
+
 /**
  * Allowed state transitions for legal cases
  */
@@ -321,6 +389,29 @@ export const CLAIM_TRANSITIONS: Record<ClaimStatus, ClaimStatus[]> = {
 };
 
 /**
+ * Allowed state transitions for contract execution phases
+ */
+export const EXECUTION_PHASE_TRANSITIONS: Record<ExecutionPhaseName, ExecutionPhaseName[]> = {
+  drafting: ['internal_review', 'archived'],
+  internal_review: ['drafting', 'client_negotiation', 'archived'],
+  client_negotiation: ['drafting', 'internal_review', 'signed', 'archived'],
+  signed: ['in_production', 'archived'],
+  in_production: ['delivered', 'archived'],
+  delivered: ['archived'],
+  archived: [],
+};
+
+/**
+ * Allowed checkpoint status transitions
+ */
+export const CHECKPOINT_TRANSITIONS: Record<CheckpointStatus, CheckpointStatus[]> = {
+  pending: ['in_progress', 'completed'],
+  in_progress: ['completed', 'reopened'],
+  completed: ['reopened'],
+  reopened: ['in_progress', 'completed'],
+};
+
+/**
  * Role-based access control matrix
  */
 export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
@@ -330,6 +421,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: true,
     legal_reviewer: true,
     observer: true,
+    operations: false,
   },
   create_case: {
     owner: true,
@@ -337,6 +429,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: true,
     legal_reviewer: false,
     observer: false,
+    operations: false,
   },
   update_case_basics: {
     owner: true,
@@ -344,6 +437,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: true,
     legal_reviewer: false,
     observer: false,
+    operations: false,
   },
   transition_to_ready_for_review: {
     owner: true,
@@ -351,6 +445,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: true,
     legal_reviewer: false,
     observer: false,
+    operations: false,
   },
   transition_to_approved: {
     owner: true,
@@ -358,6 +453,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: true,
     observer: false,
+    operations: false,
   },
   close_or_cancel: {
     owner: true,
@@ -365,6 +461,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: false,
     observer: false,
+    operations: false,
   },
   manage_members: {
     owner: true,
@@ -372,6 +469,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: false,
     observer: false,
+    operations: false,
   },
   view_audit_log: {
     owner: true,
@@ -379,6 +477,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: true,
     legal_reviewer: true,
     observer: true,
+    operations: false,
   },
   // Stage 2: Legal Sources & Rules permissions
   manage_legal_sources: {
@@ -387,6 +486,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: true,
     observer: false,
+    operations: false,
   },
   approve_legal_source_revision: {
     owner: true,
@@ -394,6 +494,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: true,
     observer: false,
+    operations: false,
   },
   approve_legal_rule: {
     owner: true,
@@ -401,6 +502,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: true,
     observer: false,
+    operations: false,
   },
   view_legal_sources: {
     owner: true,
@@ -408,6 +510,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: true,
     legal_reviewer: true,
     observer: true,
+    operations: false,
   },
   view_legal_rules: {
     owner: true,
@@ -415,6 +518,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: true,
     legal_reviewer: true,
     observer: true,
+    operations: false,
   },
   // Stage 3: Contract Templates & Packages permissions
   manage_templates: {
@@ -423,6 +527,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: true,
     observer: false,
+    operations: false,
   },
   publish_template: {
     owner: true,
@@ -430,6 +535,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: true,
     observer: false,
+    operations: false,
   },
   view_templates: {
     owner: true,
@@ -437,6 +543,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: true,
     legal_reviewer: true,
     observer: true,
+    operations: false,
   },
   manage_packages: {
     owner: true,
@@ -444,6 +551,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: true,
     observer: false,
+    operations: false,
   },
   approve_package: {
     owner: true,
@@ -451,6 +559,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: true,
     observer: false,
+    operations: false,
   },
   publish_package: {
     owner: true,
@@ -458,6 +567,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: true,
     observer: false,
+    operations: false,
   },
   view_packages: {
     owner: true,
@@ -465,6 +575,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: true,
     legal_reviewer: true,
     observer: true,
+    operations: false,
   },
   // Stage 4: Contract Approvals permissions
   manage_approvals: {
@@ -473,6 +584,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: false,
     observer: false,
+    operations: false,
   },
   decide_approvals: {
     owner: true,
@@ -480,6 +592,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: true,
     observer: false,
+    operations: false,
   },
   view_approvals: {
     owner: true,
@@ -487,6 +600,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: true,
     legal_reviewer: true,
     observer: true,
+    operations: false,
   },
   // Stage 5: Change Orders permissions
   manage_changes: {
@@ -495,6 +609,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: false,
     observer: false,
+    operations: false,
   },
   approve_changes: {
     owner: true,
@@ -502,6 +617,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: true,
     observer: false,
+    operations: false,
   },
   apply_changes: {
     owner: true,
@@ -509,6 +625,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: false,
     observer: false,
+    operations: false,
   },
   view_changes: {
     owner: true,
@@ -516,6 +633,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: true,
     legal_reviewer: true,
     observer: true,
+    operations: false,
   },
   // Stage 5: Claims permissions
   manage_claims: {
@@ -524,6 +642,7 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: true,
     observer: false,
+    operations: false,
   },
   resolve_claims: {
     owner: true,
@@ -531,12 +650,71 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     designer: false,
     legal_reviewer: true,
     observer: false,
+    operations: false,
   },
   view_claims: {
     owner: true,
     manager: true,
     designer: true,
     legal_reviewer: true,
+    observer: true,
+    operations: false,
+  },
+  // Stage 6: Execution Phase permissions
+  view_execution: {
+    owner: true,
+    manager: true,
+    designer: true,
+    legal_reviewer: true,
+    observer: true,
+    operations: false,
+  },
+  manage_execution_phase: {
+    owner: true,
+    manager: true,
+    designer: false,
+    legal_reviewer: false,
+    operations: true,
+    observer: false,
+  },
+  approve_execution_transition: {
+    owner: true,
+    manager: false,
+    designer: false,
+    legal_reviewer: true,
+    operations: false,
+    observer: false,
+  },
+  manage_checkpoints: {
+    owner: true,
+    manager: true,
+    designer: false,
+    legal_reviewer: true,
+    operations: true,
+    observer: false,
+  },
+  view_checkpoints: {
+    owner: true,
+    manager: true,
+    designer: true,
+    legal_reviewer: true,
+    operations: true,
+    observer: true,
+  },
+  manage_payments_summary: {
+    owner: true,
+    manager: false,
+    designer: false,
+    legal_reviewer: false,
+    operations: true,
+    observer: false,
+  },
+  view_payments_summary: {
+    owner: true,
+    manager: true,
+    designer: true,
+    legal_reviewer: true,
+    operations: true,
     observer: true,
   },
 };

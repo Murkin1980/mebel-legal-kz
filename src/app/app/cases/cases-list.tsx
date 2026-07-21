@@ -42,6 +42,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
   manager: 'Менеджер',
   designer: 'Дизайнер',
   legal_reviewer: 'Юрист',
+  operations: 'Операционист',
   observer: 'Наблюдатель',
 };
 

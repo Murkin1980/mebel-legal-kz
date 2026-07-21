@@ -40,6 +40,7 @@ export const userRoleSchema = z.enum([
   'manager',
   'designer',
   'legal_reviewer',
+  'operations',
   'observer',
 ]);
 
@@ -290,3 +291,84 @@ export const transitionClaimStatusSchema = z.object({
 });
 
 export type TransitionClaimStatusInput = z.infer<typeof transitionClaimStatusSchema>;
+
+// ============================================================
+// Stage 6: Contract Execution Phase commands
+// ============================================================
+
+export const executionPhaseNameSchema = z.enum([
+  'drafting',
+  'internal_review',
+  'client_negotiation',
+  'signed',
+  'in_production',
+  'delivered',
+  'archived',
+]);
+export const executionPhaseStatusSchema = z.enum(['active', 'on_hold', 'closed']);
+export const checkpointStatusSchema = z.enum(['pending', 'in_progress', 'completed', 'reopened']);
+export const checkpointAssignedRoleSchema = z.enum(['owner', 'manager', 'legal_reviewer', 'operations']);
+export const paymentStatusSchema = z.enum(['pending', 'partial', 'paid', 'overdue']);
+
+// Create Execution Phase command
+export const createExecutionPhaseSchema = z.object({
+  legalCaseId: uuidSchema,
+  contractPackageId: uuidSchema,
+  metadata: z.record(z.string(), z.unknown()).default({}),
+});
+
+export type CreateExecutionPhaseInput = z.infer<typeof createExecutionPhaseSchema>;
+
+// Transition Execution Phase command
+export const transitionExecutionPhaseSchema = z.object({
+  executionPhaseId: uuidSchema,
+  targetPhase: executionPhaseNameSchema,
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export type TransitionExecutionPhaseInput = z.infer<typeof transitionExecutionPhaseSchema>;
+
+// ============================================================
+// Stage 6: Execution Checkpoint commands
+// ============================================================
+
+// Create Checkpoint command
+export const createCheckpointSchema = z.object({
+  executionPhaseId: uuidSchema,
+  name: z.string().min(1).max(255),
+  description: z.string().max(2000).optional(),
+  assignedRole: checkpointAssignedRoleSchema.nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).default({}),
+});
+
+export type CreateCheckpointInput = z.infer<typeof createCheckpointSchema>;
+
+// Complete Checkpoint command
+export const completeCheckpointSchema = z.object({
+  checkpointId: uuidSchema,
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export type CompleteCheckpointInput = z.infer<typeof completeCheckpointSchema>;
+
+// Reopen Checkpoint command
+export const reopenCheckpointSchema = z.object({
+  checkpointId: uuidSchema,
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export type ReopenCheckpointInput = z.infer<typeof reopenCheckpointSchema>;
+
+// ============================================================
+// Stage 6: Execution Payments Summary commands
+// ============================================================
+
+// Update Payment Summary command
+export const updatePaymentSummarySchema = z.object({
+  legalCaseId: uuidSchema,
+  contractPackageId: uuidSchema,
+  amountDelta: z.string().regex(/^-?\d+$/, 'Must be an integer string'),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export type UpdatePaymentSummaryInput = z.infer<typeof updatePaymentSummarySchema>;

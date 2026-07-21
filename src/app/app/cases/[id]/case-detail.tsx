@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import type { CaseStatus, UserRole } from '@/modules/shared/types';
 import { CASE_TRANSITIONS, ROLE_PERMISSIONS } from '@/modules/shared/types';
 import { transitionCaseStatus } from '../actions';
@@ -41,6 +42,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
   manager: 'Менеджер',
   designer: 'Дизайнер',
   legal_reviewer: 'Юрист',
+  operations: 'Операционист',
   observer: 'Наблюдатель',
 };
 
@@ -254,6 +256,45 @@ export function CaseDetail({ caseData, userRole }: CaseDetailProps) {
                 </dd>
               </div>
             </dl>
+          </div>
+        </div>
+
+        {/* Navigation to related sections */}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+            Связанные разделы
+          </h3>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href={`/app/cases/${caseData.id}/packages`}
+              className="px-4 py-2 bg-blue-50 text-blue-700 rounded-md text-sm hover:bg-blue-100 border border-blue-200"
+            >
+              Пакеты договоров
+            </Link>
+            <Link
+              href={`/app/cases/${caseData.id}/changes`}
+              className="px-4 py-2 bg-blue-50 text-blue-700 rounded-md text-sm hover:bg-blue-100 border border-blue-200"
+            >
+              Изменения заказа
+            </Link>
+            <Link
+              href={`/app/cases/${caseData.id}/claims`}
+              className="px-4 py-2 bg-blue-50 text-blue-700 rounded-md text-sm hover:bg-blue-100 border border-blue-200"
+            >
+              Претензии
+            </Link>
+            <Link
+              href={`/app/cases/${caseData.id}/execution`}
+              className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-md text-sm hover:bg-emerald-100 border border-emerald-200 font-medium"
+            >
+              Исполнение договора
+            </Link>
+            <Link
+              href={`/app/cases/${caseData.id}/execution/checklists`}
+              className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-md text-sm hover:bg-emerald-100 border border-emerald-200"
+            >
+              Чек-листы
+            </Link>
           </div>
         </div>
 
