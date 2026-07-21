@@ -786,7 +786,7 @@ npm run cf:deploy
 ## Сессия: Этап 6 — Жизненный цикл исполнения договоров
 
 **Дата:** 21 июля 2026 года
-**Статус:** Завершён и валидирован. Миграции 026–029 применены, real-DB тесты пройдены. 224 unit + 118 integration + 145 mock security + 42 real-DB = **529 тестов**. Lint ✅, Typecheck ✅.
+**Статус:** Завершён и валидирован. Миграции 026–029 применены, real-DB тесты пройдены. 224 unit + 118 integration + 145 mock security + 42 real-DB = **529 тестов**. Lint ✅, Typecheck ✅, Build ✅.
 
 ---
 
@@ -795,11 +795,11 @@ npm run cf:deploy
 #### Доменные модели и SQL (миграции 026–029)
 
 Три новые таблицы:
-- `contract_execution_phases` — одна запись на (org, case, package), enum status (drafting → in_production → delivered → archived), CHECK constraint на rework-переходы
-- `execution_checkpoints` — checklist внутри фазы, enum status (pending → in_progress → completed → reopened)
-- `execution_payments_summary` — агрегат платежей: total_amount (CHECK > 0), paid_amount (CHECK ≤ total_amount), payment_status (generated)
+- `contract_execution_phases` — одна запись на `(organization_id, legal_case_id, contract_package_id)`, статусы: `drafting`, `internal_review`, `client_negotiation`, `signed`, `in_production`, `delivered`, `archived`; CHECK/transition constraints для допустимых переходов и rework-сценариев
+- `execution_checkpoints` — checklist внутри execution phase, статусы: `pending`, `in_progress`, `completed`, `reopened`
+- `execution_payments_summary` — агрегат платежей: `total_amount`, `paid_amount`, `payment_status`; денежные поля в `bigint` (тийины), CHECK constraints на неотрицательность и `paid_amount <= total_amount`
 
-RLS: `operations` роль добавлена для execution-задач. Все таблицы: SELECT — authenticated с членством, INSERT/UPDATE — по ролям, DELETE запрещён на уровне БД. Audit append-only.
+RLS: роль `operations` добавлена для execution-задач. Для всех новых таблиц включён RLS; `SELECT` разрешён только в рамках tenant membership, `INSERT/UPDATE` ограничены ролями, `DELETE` запрещён. Audit log остаётся append-only.
 
 #### State machines
 
