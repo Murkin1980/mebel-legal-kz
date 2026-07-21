@@ -780,3 +780,101 @@ npm run cf:deploy
 - **Turbopack не используется** — до официальной поддержки в OpenNext приложение на Webpack; при обновлении Next/OpenNext — пересмотреть.
 - **Зависимость от OpenNext версии** — workaround заточен под v1.20.1; при обновлении проверять поддержку Turbopack и формат SSR-чанков.
 - **Staging остаётся внутренним** — любые future изменения деплоя/кэширования проходят через Foundation Check и отдельные сессии.
+
+---
+
+## Сессия: Этап 6 — Жизненный цикл исполнения договоров
+
+**Дата:** 21 июля 2026 года
+**Статус:** Завершён и валидирован. 224 теста (unit), typecheck 0, lint 0. Миграции 026–029 готовы к применению.
+
+---
+
+### Что сделано
+
+#### Доменные модели и SQL (миграции 026–029)
+
+Три новые таблицы:
+- `contract_execution_phases` — одна запись на (org, case, package), enum status (drafting → in_production → delivered → archived), CHECK constraint на rework-переходы
+- `execution_checkpoints` — checklist внутри фазы, enum status (pending → in_progress → completed → reopened)
+- `execution_payments_summary` — агрегат платежей: total_amount (CHECK > 0), paid_amount (CHECK ≤ total_amount), payment_status (generated)
+
+RLS: `operations` роль добавлена для execution-задач. Все таблицы: SELECT — authenticated с членством, INSERT/UPDATE — по ролям, DELETE запрещён на уровне БД. Audit append-only.
+
+#### State machines
+
+**Execution phases** (8 состояний, 13+ переходов):
+- `drafting ←→ internal_review ←→ client_negotiation ←→ signed → in_production → delivered → archived`
+- rework: `client_negotiation → drafting | internal_review`
+- любой → `archived` (shortcut)
+
+**Checkpoints** (4 состояния):
+- `pending → in_progress → completed → reopened` (reopened → in_progress, completed → reopened)
+
+#### TypeScript (`shared/types.ts`)
+
+- 5 enum types: `ExecutionPhaseName`, `ExecutionPhaseStatus`, `CheckpointStatus`, `CheckpointAssignedRole`, `PaymentStatus`
+- 3 интерфейса: `ContractExecutionPhase`, `ExecutionCheckpoint`, `ExecutionPaymentsSummary`
+- `EXECUTION_PHASE_TRANSITIONS` — полный state machine map
+- `CHECKPOINT_TRANSITIONS` — checkpoint transitions
+- 6 новых permissions + `operations` роль добавлена во все 37 entries ROLE_PERMISSIONS
+
+#### Валидация (`shared/validation.ts`)
+
+6 Zod схем: `createExecutionPhaseSchema`, `transitionExecutionPhaseSchema`, `createCheckpointSchema`, `completeCheckpointSchema`, `reopenCheckpointSchema`, `updatePaymentSummarySchema`
+
+#### Доменные сервисы (`src/modules/execution/`)
+
+- `ExecutionPhaseService` — create/transition/get с tenant isolation, роль-проверкой, аудитом, идемпотентностью
+- `CheckpointService` — create/complete/reopen/list с state machine валидацией, роль-проверкой, аудитом
+- `ExecutionPaymentsSummaryService` — update/get с Money операциями (bigint tyins), расчёт payment_status
+
+#### Server actions (`actions.ts`)
+
+- `createCase` — восстановлена после перезаписи
+- `transitionCaseStatus` — исправлены типы возврата (добавлен `errorCode`)
+- `transitionExecutionPhaseAction`, `createCheckpointAction`, `completeCheckpointAction`, `reopenCheckpointAction`, `updatePaymentSummaryAction`
+
+#### UI (3 маршрута + обновлён case-detail)
+
+- `/cases/[id]/execution` — lifecycle view с phase переходами, progress bar, checklist, payments summary
+- `/cases/[id]/execution/checklists` — dedicated checklist management (create/complete/reopen)
+- Case detail — навигация на packages, changes, claims, execution, checklists
+
+#### Тесты (3 новых файла)
+
+- `tests/unit/execution-state-machine.test.ts` — 33 теста
+- `tests/integration/execution-commands.test.ts` — lifecycle, forbidden transitions, role permissions, validation schemas
+- `tests/security/execution-rls.test.ts` — tenant isolation, role-based access, terminal state security
+
+### Foundation Check (Этап 6)
+
+- [x] Границы MebelLegal KZ / Interactive KP / MebelDocs AI не нарушены.
+- [x] Tenant isolation и RLS сохранены/проверены.
+- [x] Серверная авторизация присутствует.
+- [x] Деньги не хранятся в float/JavaScript number.
+- [x] State transitions выполняются доменной командой.
+- [x] Юридически значимые действия идемпотентны.
+- [x] Audit log дополнен и остаётся append-only.
+- [x] Подтверждённые данные не перезаписываются, а версионируются.
+- [x] AI не выполняет запрещённые решения.
+- [x] В Git, логах и fixtures нет реальных данных и секретов.
+- [x] Добавлены unit/integration/security/contract tests по риску изменения.
+- [x] Изменение соответствует разрешённому текущему этапу.
+
+### Валидация (Этап 6)
+
+| Команда | Статус |
+|---|---|
+| Lint | ✅ 0 errors |
+| Typecheck | ✅ 0 errors |
+| Unit tests | ✅ 224/224 |
+| ESLint | ✅ 0 warnings |
+
+### Git commit
+
+`153b90b` — feat(stage6): contract execution lifecycle layer
+
+### Ожидание
+
+Этап 6 завершён и валидирован. Миграции 026–029 ожидают применения к Supabase проекту через SQL Editor.
