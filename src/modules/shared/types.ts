@@ -666,8 +666,8 @@ export const ROLE_PERMISSIONS: Record<string, Record<UserRole, boolean>> = {
     manager: true,
     designer: true,
     legal_reviewer: true,
+    operations: true,
     observer: true,
-    operations: false,
   },
   manage_execution_phase: {
     owner: true,
