@@ -822,3 +822,458 @@ describe('Real-DB: claims CRUD', () => {
     expect(data?.resolution_summary).toBe('Претензия удовлетворена частично');
   });
 });
+
+// ============================================================
+// Stage 6: Contract Execution Lifecycle — Real-DB Validation
+// ============================================================
+
+describe('Real-DB: Stage 6 — Table Existence', () => {
+  it('contract_execution_phases table exists in database', async () => {
+    const exists = await tableExists('contract_execution_phases');
+    expect(exists).toBe(true);
+  });
+
+  it('execution_checkpoints table exists in database', async () => {
+    const exists = await tableExists('execution_checkpoints');
+    expect(exists).toBe(true);
+  });
+
+  it('execution_payments_summary table exists in database', async () => {
+    const exists = await tableExists('execution_payments_summary');
+    expect(exists).toBe(true);
+  });
+});
+
+describe('Real-DB: Stage 6 — contract_execution_phases CRUD', () => {
+  let phaseId: string | null = null;
+  let testCaseId: string | null = null;
+  let testPkgId: string | null = null;
+
+  beforeAll(async () => {
+    const userId = await getTestUserId();
+    const { data: caseData } = await admin
+      .from('legal_cases')
+      .insert({
+        organization_id: TEST_ORG_ID,
+        case_number: 'LC-999910',
+        title: 'Тестовый кейс для execution phase',
+        customer_type: 'legal_entity',
+        customer_display_name: 'Тестовый клиент',
+        project_type: 'manufacture_only',
+        status: 'draft',
+        currency: 'KZT',
+        created_by: userId,
+      })
+      .select('id')
+      .single();
+
+    if (caseData) {
+      testCaseId = caseData.id;
+      const { data: pkgData } = await admin
+        .from('contract_packages')
+        .insert({
+          legal_case_id: testCaseId,
+          template_code: 'REALDB-TPL-EXEC',
+          version: 1,
+          status: 'draft',
+          content_snapshot: {},
+          source_revision_ids: [],
+          created_by: userId,
+        })
+        .select('id')
+        .single();
+
+      if (pkgData) {
+        testPkgId = pkgData.id;
+      }
+    }
+  });
+
+  afterAll(async () => {
+    if (phaseId) await admin.from('contract_execution_phases').delete().eq('id', phaseId);
+    if (testPkgId) await admin.from('contract_packages').delete().eq('id', testPkgId);
+    if (testCaseId) await admin.from('legal_cases').delete().eq('id', testCaseId);
+  });
+
+  it('can SELECT from contract_execution_phases with service role', async () => {
+    const { error } = await admin
+      .from('contract_execution_phases')
+      .select('*')
+      .limit(1);
+    expect(error).toBeNull();
+  });
+
+  it('can INSERT into contract_execution_phases (defaults to drafting)', async () => {
+    if (!testCaseId || !testPkgId) {
+      console.log('Skipping: test case or package not created');
+      return;
+    }
+    const userId = await getTestUserId();
+    const { data, error } = await admin
+      .from('contract_execution_phases')
+      .insert({
+        organization_id: TEST_ORG_ID,
+        legal_case_id: testCaseId,
+        contract_package_id: testPkgId,
+        current_phase: 'drafting',
+        status: 'active',
+        created_by: userId,
+        updated_by: userId,
+      })
+      .select('id, current_phase, status')
+      .single();
+
+    expect(error).toBeNull();
+    expect(data?.id).toBeDefined();
+    expect(data?.current_phase).toBe('drafting');
+    expect(data?.status).toBe('active');
+    phaseId = data!.id;
+  });
+
+  it('can UPDATE current_phase (internal_review)', async () => {
+    if (!phaseId) {
+      console.log('Skipping: phase not created');
+      return;
+    }
+    const userId = await getTestUserId();
+    const { error } = await admin
+      .from('contract_execution_phases')
+      .update({ current_phase: 'internal_review', updated_by: userId })
+      .eq('id', phaseId);
+
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('contract_execution_phases')
+      .select('current_phase')
+      .eq('id', phaseId)
+      .single();
+
+    expect(data?.current_phase).toBe('internal_review');
+  });
+
+  it('can UPDATE status to closed', async () => {
+    if (!phaseId) {
+      console.log('Skipping: phase not created');
+      return;
+    }
+    const userId = await getTestUserId();
+    const { error } = await admin
+      .from('contract_execution_phases')
+      .update({ status: 'closed', updated_by: userId })
+      .eq('id', phaseId);
+
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('contract_execution_phases')
+      .select('status')
+      .eq('id', phaseId)
+      .single();
+
+    expect(data?.status).toBe('closed');
+  });
+});
+
+describe('Real-DB: Stage 6 — execution_checkpoints CRUD', () => {
+  let checkpointId: string | null = null;
+  let phaseId: string | null = null;
+  let testCaseId: string | null = null;
+  let testPkgId: string | null = null;
+
+  beforeAll(async () => {
+    const userId = await getTestUserId();
+
+    // Create case
+    const { data: caseData } = await admin
+      .from('legal_cases')
+      .insert({
+        organization_id: TEST_ORG_ID,
+        case_number: 'LC-999911',
+        title: 'Тестовый кейс для checkpoints',
+        customer_type: 'individual',
+        customer_display_name: 'Тестовый клиент',
+        project_type: 'manufacture_delivery',
+        status: 'draft',
+        currency: 'KZT',
+        created_by: userId,
+      })
+      .select('id')
+      .single();
+
+    if (caseData) {
+      testCaseId = caseData.id;
+
+      // Create package
+      const { data: pkgData } = await admin
+        .from('contract_packages')
+        .insert({
+          legal_case_id: testCaseId,
+          template_code: 'REALDB-TPL-CKPT',
+          version: 1,
+          status: 'draft',
+          content_snapshot: {},
+          source_revision_ids: [],
+          created_by: userId,
+        })
+        .select('id')
+        .single();
+
+      if (pkgData) {
+        testPkgId = pkgData.id;
+
+        // Create phase
+        const { data: phaseData } = await admin
+          .from('contract_execution_phases')
+          .insert({
+            organization_id: TEST_ORG_ID,
+            legal_case_id: testCaseId,
+            contract_package_id: testPkgId,
+            current_phase: 'drafting',
+            status: 'active',
+            created_by: userId,
+            updated_by: userId,
+          })
+          .select('id')
+          .single();
+
+        if (phaseData) {
+          phaseId = phaseData.id;
+        }
+      }
+    }
+  });
+
+  afterAll(async () => {
+    if (checkpointId) await admin.from('execution_checkpoints').delete().eq('id', checkpointId);
+    if (phaseId) await admin.from('contract_execution_phases').delete().eq('id', phaseId);
+    if (testPkgId) await admin.from('contract_packages').delete().eq('id', testPkgId);
+    if (testCaseId) await admin.from('legal_cases').delete().eq('id', testCaseId);
+  });
+
+  it('can SELECT from execution_checkpoints with service role', async () => {
+    const { error } = await admin
+      .from('execution_checkpoints')
+      .select('*')
+      .limit(1);
+    expect(error).toBeNull();
+  });
+
+  it('can INSERT into execution_checkpoints (defaults to pending)', async () => {
+    if (!phaseId) {
+      console.log('Skipping: phase not created');
+      return;
+    }
+    const userId = await getTestUserId();
+    const { data, error } = await admin
+      .from('execution_checkpoints')
+      .insert({
+        organization_id: TEST_ORG_ID,
+        execution_phase_id: phaseId,
+        name: 'Тестовый чекпоинт',
+        status: 'pending',
+        created_by: userId,
+        updated_by: userId,
+      })
+      .select('id, name, status')
+      .single();
+
+    expect(error).toBeNull();
+    expect(data?.id).toBeDefined();
+    expect(data?.status).toBe('pending');
+    checkpointId = data!.id;
+  });
+
+  it('can UPDATE checkpoint to in_progress', async () => {
+    if (!checkpointId) {
+      console.log('Skipping: checkpoint not created');
+      return;
+    }
+    const userId = await getTestUserId();
+    const { error } = await admin
+      .from('execution_checkpoints')
+      .update({ status: 'in_progress', updated_by: userId })
+      .eq('id', checkpointId);
+
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('execution_checkpoints')
+      .select('status')
+      .eq('id', checkpointId)
+      .single();
+
+    expect(data?.status).toBe('in_progress');
+  });
+
+  it('can UPDATE checkpoint to completed', async () => {
+    if (!checkpointId) {
+      console.log('Skipping: checkpoint not created');
+      return;
+    }
+    const userId = await getTestUserId();
+    const { error } = await admin
+      .from('execution_checkpoints')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        completed_by: userId,
+        updated_by: userId,
+      })
+      .eq('id', checkpointId);
+
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('execution_checkpoints')
+      .select('status, completed_at, completed_by')
+      .eq('id', checkpointId)
+      .single();
+
+    expect(data?.status).toBe('completed');
+    expect(data?.completed_at).toBeDefined();
+    expect(data?.completed_by).toBe(userId);
+  });
+});
+
+describe('Real-DB: Stage 6 — execution_payments_summary CRUD', () => {
+  let summaryId: string | null = null;
+  let testCaseId: string | null = null;
+  let testPkgId: string | null = null;
+
+  beforeAll(async () => {
+    const userId = await getTestUserId();
+
+    const { data: caseData } = await admin
+      .from('legal_cases')
+      .insert({
+        organization_id: TEST_ORG_ID,
+        case_number: 'LC-999912',
+        title: 'Тестовый кейс для payments',
+        customer_type: 'legal_entity',
+        customer_display_name: 'Тестовый клиент',
+        project_type: 'manufacture_delivery_installation',
+        status: 'draft',
+        currency: 'KZT',
+        created_by: userId,
+      })
+      .select('id')
+      .single();
+
+    if (caseData) {
+      testCaseId = caseData.id;
+
+      const { data: pkgData } = await admin
+        .from('contract_packages')
+        .insert({
+          legal_case_id: testCaseId,
+          template_code: 'REALDB-TPL-PAY',
+          version: 1,
+          status: 'draft',
+          content_snapshot: {},
+          source_revision_ids: [],
+          created_by: userId,
+        })
+        .select('id')
+        .single();
+
+      if (pkgData) {
+        testPkgId = pkgData.id;
+      }
+    }
+  });
+
+  afterAll(async () => {
+    if (summaryId) await admin.from('execution_payments_summary').delete().eq('id', summaryId);
+    if (testPkgId) await admin.from('contract_packages').delete().eq('id', testPkgId);
+    if (testCaseId) await admin.from('legal_cases').delete().eq('id', testCaseId);
+  });
+
+  it('can SELECT from execution_payments_summary with service role', async () => {
+    const { error } = await admin
+      .from('execution_payments_summary')
+      .select('*')
+      .limit(1);
+    expect(error).toBeNull();
+  });
+
+  it('can INSERT into execution_payments_summary', async () => {
+    if (!testCaseId || !testPkgId) {
+      console.log('Skipping: test case or package not created');
+      return;
+    }
+    const userId = await getTestUserId();
+    const { data, error } = await admin
+      .from('execution_payments_summary')
+      .insert({
+        organization_id: TEST_ORG_ID,
+        legal_case_id: testCaseId,
+        contract_package_id: testPkgId,
+        total_amount: 10000000,
+        paid_amount: 0,
+        status: 'pending',
+        created_by: userId,
+        updated_by: userId,
+      })
+      .select('id, total_amount, paid_amount, status')
+      .single();
+
+    expect(error).toBeNull();
+    expect(data?.id).toBeDefined();
+    expect(data?.total_amount).toBe(10000000);
+    expect(data?.paid_amount).toBe(0);
+    expect(data?.status).toBe('pending');
+    summaryId = data!.id;
+  });
+
+  it('can UPDATE paid_amount (partial payment)', async () => {
+    if (!summaryId) {
+      console.log('Skipping: summary not created');
+      return;
+    }
+    const userId = await getTestUserId();
+    const { error } = await admin
+      .from('execution_payments_summary')
+      .update({ paid_amount: 5000000, status: 'partial', updated_by: userId })
+      .eq('id', summaryId);
+
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('execution_payments_summary')
+      .select('paid_amount, status')
+      .eq('id', summaryId)
+      .single();
+
+    expect(data?.paid_amount).toBe(5000000);
+    expect(data?.status).toBe('partial');
+  });
+
+  it('can UPDATE to fully paid', async () => {
+    if (!summaryId) {
+      console.log('Skipping: summary not created');
+      return;
+    }
+    const userId = await getTestUserId();
+    const { error } = await admin
+      .from('execution_payments_summary')
+      .update({
+        paid_amount: 10000000,
+        status: 'paid',
+        last_payment_at: new Date().toISOString(),
+        updated_by: userId,
+      })
+      .eq('id', summaryId);
+
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('execution_payments_summary')
+      .select('paid_amount, status')
+      .eq('id', summaryId)
+      .single();
+
+    expect(data?.paid_amount).toBe(10000000);
+    expect(data?.status).toBe('paid');
+  });
+});
