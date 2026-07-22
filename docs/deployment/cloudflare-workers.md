@@ -13,7 +13,7 @@
 
 ## Prerequisites
 
-- Node.js >= 18
+- Node.js >= 22
 - Cloudflare account (free tier sufficient for internal)
 - Supabase project `uctedpswcbcwufzegvhl` (already provisioned)
 - GitHub repo `Murkin1980/mebel-legal-kz`
@@ -37,9 +37,21 @@ npm run preview
 # Build for Cloudflare (produces .open-next/worker.js)
 npm run cf:build
 
+# Run every local quality gate, including real-DB security tests
+npm run preflight
+
 # Deploy to Cloudflare Workers
 npm run cf:deploy
 ```
+
+> Do not publish a Windows-built OpenNext bundle. Local Windows `next build`
+> remains supported for development checks, but the deployable OpenNext bundle
+> must be produced by Cloudflare Workers Builds, WSL, or another Linux runner.
+
+`npm run test:security` is safe for public pull requests and does not require
+credentials. `npm run test:security:realdb` requires the three Supabase
+variables listed below and runs on pushes to `main` when repository secrets are
+available.
 
 ## R2 Incremental Cache
 
@@ -96,7 +108,8 @@ Workers & Pages → Create application → Pages → Connect to Git
 | Production branch | `main` |
 | Framework preset | Next.js (opennextjs) |
 | Build command | `npm run cf:build` |
-| Build output directory | `.open-next` |
+| Deploy command | `npx wrangler deploy` |
+| Non-production deploy command | `npx wrangler versions upload` |
 | Node.js version | `22` |
 
 ### 3. Set Environment Variables
@@ -151,7 +164,9 @@ After deployment, verify manually:
 - **Internal-only** — no custom domain, no public access for clients
 - **No real data** — synthetic data in tenge only
 - **R2 bucket required** — must be created before first deploy (for incremental cache)
-- **Windows warning** — OpenNext warns about Windows; builds succeed but WSL recommended for production
+- **Windows warning** — a Windows build can complete successfully and still
+  fail at runtime. Build deployable bundles on Linux via Cloudflare Workers
+  Builds, WSL, or another Linux CI runner.
 - **Service role key** — only used server-side in `createServiceClient()`, never exposed to browser
 - **Webpack required** — `package.json` uses `next build --webpack` because OpenNext v1.20.1 does not bundle Turbopack SSR chunks correctly on Workers. Turbopack support may arrive in a future OpenNext release.
 - **Non-ASCII paths** — all build/deploy commands must run from ASCII-only directories. Cyrillic in paths breaks wrangler, OpenNext, and PowerShell CLI tools.

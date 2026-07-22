@@ -5,8 +5,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    include: ['tests/security/**/*.test.ts'],
-    exclude: ['tests/security/legal-sources-realdb.test.ts'],
+    include: ['tests/security/legal-sources-realdb.test.ts'],
     testTimeout: 30000,
   },
   resolve: {

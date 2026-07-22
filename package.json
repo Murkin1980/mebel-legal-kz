@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.config.integration.ts",
     "test:security": "vitest run --config vitest.config.security.ts",
+    "test:security:realdb": "vitest run --config vitest.config.security.realdb.ts",
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
     "test:e2e:smoke": "npx playwright test tests/e2e/smoke.spec.ts",
@@ -22,7 +23,8 @@
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "preflight": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/preflight.ps1"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
