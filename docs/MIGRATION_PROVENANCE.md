@@ -4,6 +4,8 @@
 
 | Новый модуль/файл | Проект-источник | Исходная идея/файл | Что изменено | Какие тесты добавлены |
 |---|---|---|---|---|
+| `src/modules/orders/*` | `Murkin1980/mebeldocs-ai` (локальная копия, фактический commit уточняется перед переносом production-кода) | `apps/web/lib/domain/entities.ts`, `date-utils.ts`, `application/order-service.ts`, `invoice-service.ts` | Переписано под Supabase, tenant isolation, bigint-string контракт, договор как опцию; код не копировался целиком | `order-working-days`, `order-contract`, `order-prototype`, RLS migration tests |
+| `src/app/app/orders/*` | MebelDocs AI + текущий UI MebelLegal | Сценарий списка/карточки заказов | Реализовано в App Router MebelLegal с серверными действиями и сохранением legacy-навигации | Unit/integration/security; визуальная QA отложена до локальной БД |
 | `src/modules/shared/money.ts` | MebelDocs AI | Тип Money в тийинах | Адаптирован для Next.js, добавлены операции сравнения | Unit: 390 000 ₸, проценты, округление |
 | `src/modules/shared/errors.ts` | MebelDocs AI | Стандартизированные ошибки | Упрощён для MVP, добавлены коды ошибок | Unit: создание и сериализация ошибок |
 | `src/modules/audit/audit.service.ts` | MebelDocs AI | Append-only audit event | Адаптирован для Supabase, добавлена RLS-проверка | Integration: создание в транзакции |

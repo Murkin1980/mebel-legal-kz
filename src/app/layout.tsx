@@ -4,8 +4,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'MebelLegal KZ',
-  description: 'Правовой контур для мебельного бизнеса Республики Казахстан',
+  title: 'MebelDocs',
+  description: 'Документооборот мебельной компании: заказы, документы и сроки',
 };
 
 export default function RootLayout({

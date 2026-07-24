@@ -57,13 +57,13 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8 p-8">
         <div>
           <h1 className="text-3xl font-bold text-center text-gray-900">
-            MebelLegal KZ
+            MebelDocs
           </h1>
           <p className="mt-2 text-center text-gray-600">
-            Правовой контур для мебельного бизнеса
+            Документооборот мебельной компании
           </p>
           <p className="mt-1 text-center text-sm text-amber-600">
-            Этап 1. Юридические документы и проверка законодательства ещё не подключены.
+            Заказы, счета, акты, договоры, сроки и напоминания в одном рабочем контуре.
           </p>
         </div>
 
