@@ -1042,3 +1042,46 @@ RLS: роль `operations` добавлена для execution-задач. Дл�
 - Live smoke: `/` = 200, `/login` = 200, закрытый `/app/orders` = 307 на `/login`.
 - Проверки: 235 unit, 119 integration, 160 security, 57 real-DB security и 71 E2E.
 - Runtime `npm audit --omit=dev`: 0 уязвимостей.
+## Сессия: пилотный onboarding, админка и импорт архивов
+
+**Дата:** 26 июля 2026 года
+**Ветка:** `codex/complete-mebeldocs-release`
+
+### Выполнено
+
+- утверждённая Stitch-палитра (фиолетовый, золото, champagne) перенесена в
+  публичный лендинг и общий shell приложения;
+- исправлен onboarding: пользователь без организации переходит в админку, а не
+  в форму юридического кейса;
+- добавлены создание компании, ролевое приглашение и одноразовая ссылка с
+  установкой пароля;
+- добавлен ZIP-импорт до 25 МБ с обязательным UTF-8 `manifest.csv`,
+  предпросмотром, защитой от path traversal/zip bomb, SHA-256 idempotency;
+- архив хранится в private Supabase Storage, импортированные файлы связаны с
+  заказами и версиями документов;
+- добавочная миграция `20260726190000_pilot_admin_and_imports.sql` применена к
+  связанному staging-проекту через точечный `supabase db query`, без `db push`;
+- таблицы импорта имеют RLS, tenant SELECT и недоступны `anon`.
+
+### Foundation Check
+
+- [x] Заказ остаётся верхним агрегатом; договор необязателен.
+- [x] Tenant isolation и RLS сохранены.
+- [x] Service role используется только в server-only маршрутах.
+- [x] Деньги конвертируются в целые тиыны.
+- [x] Повторный архив определяется по SHA-256 и не создаёт дубль batch.
+- [x] Импорт требует явного manifest и подтверждения пользователя.
+- [x] Audit event создаётся для приглашения и завершённого импорта.
+- [x] Реальные данные и значения секретов не добавлены.
+- [x] AI/RAG, ЭСФ и банковская сверка не добавлены.
+
+### Проверки
+
+- Unit: 239/239.
+- Integration: 119/119.
+- Security: 160/160.
+- Typecheck, ESLint, Next.js build и OpenNext Cloudflare build: успешно.
+- Runtime `npm audit --omit=dev`: 0 уязвимостей.
+- Staging RLS: обе таблицы `relrowsecurity=true`, `anon SELECT=false`.
+
+---

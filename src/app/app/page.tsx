@@ -25,10 +25,10 @@ export default async function AppPage() {
           Создайте организацию или попросите приглашение.
         </p>
         <Link
-          href="/app/cases/new"
+          href="/app/admin"
           className="inline-block rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
         >
-          Создать организацию
+          Создать компанию
         </Link>
       </div>
     );

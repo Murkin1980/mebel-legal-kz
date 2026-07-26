@@ -1,0 +1,4 @@
+order_number,customer_name,project_title,amount_kzt,document_type,document_number,file_path,production_due_date,delivery_due_date
+ORD-0248,Айгуль Сарсенова,Кухня Терра,2840000,invoice,INV-0248,ORD-0248/invoice.pdf,2026-08-10,2026-08-15
+ORD-0248,Айгуль Сарсенова,Кухня Терра,2840000,act,ACT-0248,ORD-0248/act.pdf,2026-08-10,2026-08-15
+ORD-0248,Айгуль Сарсенова,Кухня Терра,2840000,contract,CTR-0248,ORD-0248/contract.pdf,2026-08-10,2026-08-15
