@@ -1083,5 +1083,8 @@ RLS: роль `operations` добавлена для execution-задач. Дл�
 - Typecheck, ESLint, Next.js build и OpenNext Cloudflare build: успешно.
 - Runtime `npm audit --omit=dev`: 0 уязвимостей.
 - Staging RLS: обе таблицы `relrowsecurity=true`, `anon SELECT=false`.
+- Cloudflare Worker version: `528052e0-31eb-4b9d-bda5-369270fd1c59`.
+- Live smoke: `/`, `/login`, `/accept-invite` = 200; `/app/admin` и
+  `/app/imports` без сессии = 307 на `/login`.
 
 ---
