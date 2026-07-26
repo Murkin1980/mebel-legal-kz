@@ -49,6 +49,8 @@ export const createOrderSchema = z.object({
   title: z.string().min(1).max(500),
   customerType: customerTypeSchema,
   customerDisplayName: z.string().min(1).max(255),
+  customerIinBin: z.string().trim().max(20).optional(),
+  customerAddress: z.string().trim().max(500).optional(),
   projectType: projectTypeSchema,
   totalAmountTiyin: nonNegativeTiyinSchema.default('0'),
   contractRequired: z.boolean().default(false),
@@ -58,9 +60,31 @@ export const createOrderSchema = z.object({
   sourceOrderId: z.string().max(255).optional(),
   sourceOrderVersion: z.string().max(100).optional(),
   legacyLegalCaseId: uuidSchema.optional(),
+  items: z.array(z.object({
+    name: z.string().min(1).max(500),
+    quantity: z.string().regex(/^\d+(?:\.\d{1,3})?$/),
+    unit: z.string().min(1).max(30),
+    unitPriceTiyin: nonNegativeTiyinSchema,
+  })).min(1).max(100),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
+
+export const organizationDocumentProfileSchema = z.object({
+  legalName: z.string().min(1).max(255),
+  iinBin: z.string().min(6).max(20),
+  address: z.string().min(1).max(500),
+  phone: z.string().max(50).optional(),
+  email: z.string().email().max(255).optional().or(z.literal('')),
+  bankName: z.string().max(255).optional(),
+  iik: z.string().max(34).optional(),
+  bik: z.string().max(20).optional(),
+  kbe: z.string().max(10).optional(),
+  knp: z.string().max(10).optional(),
+  signatoryName: z.string().max(255).optional(),
+});
+
+export type OrganizationDocumentProfileInput = z.infer<typeof organizationDocumentProfileSchema>;
 
 export const createOrderDocumentSchema = z.object({
   orderId: uuidSchema,

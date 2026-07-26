@@ -1001,3 +1001,186 @@ RLS: роль `operations` добавлена для execution-задач. Дл�
 - [x] В Git, логах и fixtures нет реальных данных и секретов.
 - [x] Unit/integration/security/real-DB тесты сохранены.
 - [x] Изменение соответствует текущему этапу внутреннего staging.
+
+---
+
+## Сессия: публичный релиз MebelDocs
+
+**Дата:** 26 июля 2026 года
+**Ветка:** `codex/complete-mebeldocs-release`
+
+### Выполнено
+
+- публичный лендинг заменил редирект `/` на login;
+- заказ расширен клиентскими реквизитами и позициями;
+- добавлен профиль реквизитов организации;
+- счёт и акт получают versioned snapshot и экспортируются в PDF/DOCX;
+- добавочные миграции `20260724205035` и `20260726160000` применены к staging;
+- у шести новых таблиц включён RLS;
+- anonymous execution четырёх RPC закрыт, `search_path` пустой;
+- документация приведена к модели «заказ как корень»;
+- исторический drift миграций 002–029 зафиксирован, массовый repair запрещён.
+
+### Foundation Check
+
+- [x] Заказ остаётся верхним агрегатом, договор необязателен.
+- [x] MebelLegal сохранён как внутренний юридический модуль.
+- [x] Изменения схемы только добавочные; legacy-таблицы и данные не удалены.
+- [x] Tenant isolation и RLS включены и проверены read-only запросами.
+- [x] Серверная авторизация и проверки ролей сохранены.
+- [x] Деньги хранятся и рассчитываются в целых тиынах.
+- [x] Создание сущности и audit event выполняется атомарно.
+- [x] Версия документа хранит снимок реквизитов и позиций.
+- [x] AI/RAG, ЭСФ, банк, претензии и публичные согласования не добавлены.
+- [x] Реальные данные и значения секретов не помещены в Git или логи.
+- [x] Локальные тесты, typecheck, lint, Next.js build и OpenNext build пройдены.
+
+### Публикация и итоговая проверка
+
+- Cloudflare Worker version: `39cbd810-de35-4fe0-9b5f-4234eb440a64`.
+- Публичный URL: `https://mebel-legal-kz.muriktl.workers.dev/`.
+- Live smoke: `/` = 200, `/login` = 200, закрытый `/app/orders` = 307 на `/login`.
+- Проверки: 235 unit, 119 integration, 160 security, 57 real-DB security и 71 E2E.
+- Runtime `npm audit --omit=dev`: 0 уязвимостей.
+## Сессия: пилотный onboarding, админка и импорт архивов
+
+**Дата:** 26 июля 2026 года
+**Ветка:** `codex/complete-mebeldocs-release`
+
+### Выполнено
+
+- утверждённая Stitch-палитра (фиолетовый, золото, champagne) перенесена в
+  публичный лендинг и общий shell приложения;
+- исправлен onboarding: пользователь без организации переходит в админку, а не
+  в форму юридического кейса;
+- добавлены создание компании, ролевое приглашение и одноразовая ссылка с
+  установкой пароля;
+- добавлен ZIP-импорт до 25 МБ с обязательным UTF-8 `manifest.csv`,
+  предпросмотром, защитой от path traversal/zip bomb, SHA-256 idempotency;
+- архив хранится в private Supabase Storage, импортированные файлы связаны с
+  заказами и версиями документов;
+- добавочная миграция `20260726190000_pilot_admin_and_imports.sql` применена к
+  связанному staging-проекту через точечный `supabase db query`, без `db push`;
+- таблицы импорта имеют RLS, tenant SELECT и недоступны `anon`.
+
+### Foundation Check
+
+- [x] Заказ остаётся верхним агрегатом; договор необязателен.
+- [x] Tenant isolation и RLS сохранены.
+- [x] Service role используется только в server-only маршрутах.
+- [x] Деньги конвертируются в целые тиыны.
+- [x] Повторный архив определяется по SHA-256 и не создаёт дубль batch.
+- [x] Импорт требует явного manifest и подтверждения пользователя.
+- [x] Audit event создаётся для приглашения и завершённого импорта.
+- [x] Реальные данные и значения секретов не добавлены.
+- [x] AI/RAG, ЭСФ и банковская сверка не добавлены.
+
+### Проверки
+
+- Unit: 239/239.
+- Integration: 119/119.
+- Security: 160/160.
+- Typecheck, ESLint, Next.js build и OpenNext Cloudflare build: успешно.
+- Runtime `npm audit --omit=dev`: 0 уязвимостей.
+- Staging RLS: обе таблицы `relrowsecurity=true`, `anon SELECT=false`.
+- Cloudflare Worker version: `528052e0-31eb-4b9d-bda5-369270fd1c59`.
+- Live smoke: `/`, `/login`, `/accept-invite` = 200; `/app/admin` и
+  `/app/imports` без сессии = 307 на `/login`.
+
+---
+## Сессия: управляемый handoff OpenCode
+
+**Дата:** 26 июля 2026 года
+
+### Выполнено
+
+- создан `OPENCODE_FULL_PROJECT_INSTRUCTIONS.md` с шестью последовательными stages;
+- зафиксированы роли OpenCode (исполнитель), Codex (ревью), владелец (визуальная
+  приёмка) и Perplexity (необязательный внешний аналитик);
+- каждый stage обязан завершаться тестами, Foundation Check, отчётом, desktop/mobile
+  скриншотами, commit/push, Cloudflare staging deployment и остановкой на приёмку;
+- добавлена точная карта 11 утверждённых Stitch-экранов и design system;
+- добавлены машинный `design-handoff/stitch/manifest.json` и шаблон stage report;
+- `ROADMAP.md` обновлён под тройную приёмку `OC / CR / OV`.
+
+### Ограничения
+
+- Stitch ZIP не создавался без фактического экспорта HTML/PNG: пустой или выдуманный
+  архив не помогает кодеру.
+- В handoff нельзя включать секреты, реальные документы, `.env`, `.git`, `node_modules`
+  или build artifacts.
+- Документационный handoff не является продуктовым stage и не требует deployment.
+
+---
+## Session: Stage 01 product shell implementation
+
+**Date:** 2026-07-26
+**Branch:** `codex/complete-mebeldocs-release`
+
+- Implemented the Stitch-aligned AppShell, mobile drawer, icon navigation and
+  unified purple/gold/champagne styling.
+- Rebuilt login with responsive desktop/mobile composition.
+- Business logic, database schema and migrations were not changed.
+- Passed typecheck, lint, 239 unit, 119 integration, 160 security, Next build,
+  OpenNext build, runtime audit and 8 public E2E checks.
+- Full authenticated E2E was limited by Supabase network timeouts.
+- Visual evidence is stored in `output/playwright/stage-01/`.
+- Deployed Cloudflare version `d34c41c8-8d62-44f2-b9c8-7548ad7d655d`;
+  live smoke returned `/` 200, `/login` 200 and `/app` 307 to `/login`.
+
+### Foundation Check
+
+- [x] Order remains the top-level aggregate and contract remains optional.
+- [x] Tenant isolation, RLS and server authorization code were not changed.
+- [x] Money and audit/versioning behavior were not changed.
+- [x] No prohibited AI/RAG, ESF, bank or claims scope was added.
+- [x] No real data or secret values were added to Git.
+## Session: Stage 02 team administration
+
+**Date:** 2026-07-26
+
+- Added owner-only team list, role changes, disable/restore and repeat invites.
+- Added atomic `manage_organization_member` with tenant authorization,
+  last-owner protection and audit events.
+- Hid Team navigation for non-owner memberships while preserving route checks.
+- Passed 239 unit, 119 integration, 164 security, lint, typecheck, Next and
+  OpenNext builds locally; GitHub Actions were not used because its quota ended.
+- Existing `operations` role/schema drift is recorded and not silently migrated.
+- Stage 02 database function and Team UI reached staging version `ce2e7c1d`;
+  owner desktop/mobile screenshots were captured with synthetic data.
+- Navigation correction `8596bc2` remains pending deployment after repeated
+  Cloudflare API `fetch failed` responses; it is pushed and locally verified.
+
+## Session: Stage 03 reliable archive import
+
+**Date:** 2026-07-26
+**Branch:** `codex/complete-mebeldocs-release`
+
+- Added tenant-scoped import history and a batch detail screen.
+- Added a downloadable synthetic ZIP/manifest template validated by the same
+  archive preflight as user uploads.
+- Added retry semantics: completed SHA is idempotent, processing SHA returns
+  conflict, and failed SHA is cleaned and retried using the same batch.
+- Added best-effort compensation for newly created archive orders, file rows
+  and private Storage objects when a commit fails. This is a compensating
+  workflow, not a single PostgreSQL transaction across Database and Storage.
+- Added a server-only, tenant-checked private download route with a 60-second
+  signed URL. No public bucket or service-role browser exposure was added.
+- Visual evidence: `output/playwright/stage-03/imports-desktop.png` and
+  `output/playwright/stage-03/imports-mobile.png`.
+- Passed typecheck, lint, 240 unit, 119 integration, 168 security, Next build,
+  OpenNext Cloudflare build and 2 focused E2E checks. GitHub Actions were not
+  used.
+- Cloudflare deployment is intentionally batched until the connection is
+  stable; the current staging version is unchanged.
+
+### Foundation Check
+
+- [x] Order remains the top-level aggregate; contract remains optional.
+- [x] Tenant isolation is applied to history, detail and download queries.
+- [x] Server authorization is required before service-role Storage signing.
+- [x] Money conversion remains integer tiyin and does not use float storage.
+- [x] Completed archive SHA remains idempotent; failed SHA is retryable.
+- [x] Audit remains append-only and records success/failure.
+- [x] No real data, secrets, AI/RAG, ESF, bank or claims scope was added.
+- [x] Tests were added in proportion to import and download security risk.

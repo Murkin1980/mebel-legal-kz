@@ -28,7 +28,7 @@ test.describe('Login Page', () => {
 
     const h1 = page.locator('h1');
     await expect(h1).toBeVisible();
-    await expect(h1).toHaveText(/MebelLegal KZ/);
+    await expect(h1).toHaveText(/MebelDocs/);
   });
 
   test('should have accessible form labels', async ({ page }) => {
@@ -38,10 +38,10 @@ test.describe('Login Page', () => {
     await expect(page.locator('label[for="password"]')).toBeVisible();
   });
 
-  test('should show stage 1 warning', async ({ page }) => {
+  test('should explain the unified product', async ({ page }) => {
     await page.goto('/login');
 
-    await expect(page.locator('text=Этап 1')).toBeVisible();
+    await expect(page.getByText('документооборот', { exact: false }).first()).toBeVisible();
   });
 });
 
@@ -55,8 +55,8 @@ test.describe('App Layout', () => {
     await expect(page.locator('a[href="/app/audit"]')).toBeVisible();
   });
 
-  test('should show stage banner', async ({ page }) => {
-    const banner = page.locator('text=Этап');
+  test('should show prototype safety banner', async ({ page }) => {
+    const banner = page.getByText('Рабочий прототип', { exact: false });
     await expect(banner).toBeVisible();
   });
 });

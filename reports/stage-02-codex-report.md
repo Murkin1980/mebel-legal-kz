@@ -1,0 +1,58 @@
+# Stage 02 — team administration
+
+Date: 2026-07-26
+
+## Implemented
+
+- Owner-only participant list with email, role and membership status.
+- Atomic role change, disable and restore command.
+- Last active owner protection under a transaction advisory lock.
+- Append-only audit events for every membership change.
+- Invitations now remain `invited` until acceptance.
+- Repeat invitation and one-click link copy.
+- The Team navigation item is rendered only for an active owner; direct route
+  authorization remains server-side.
+
+## Verification
+
+- Typecheck and lint passed.
+- Unit: 239/239.
+- Integration: 119/119.
+- Security: 164/164, including new tenant/owner/last-owner/audit/grant checks.
+- Next.js and OpenNext Cloudflare builds passed.
+- Full E2E reached 65/71; four stable navigation regressions were corrected
+  and the affected focused slice then passed 6/6. Two remaining full-suite
+  failures were authentication timing/state interference under six parallel
+  workers, not Stage 02 membership assertions.
+
+## Foundation check
+
+- Membership commands require an authenticated active owner in the same tenant.
+- Last-owner invariant is serialized and cannot be bypassed by concurrent calls.
+- Audit insertion and membership mutation share one transaction.
+- No customer documents, money logic or product modules were changed.
+- Migration adds one function and grants only; it does not rewrite data.
+
+## Known schema drift
+
+The TypeScript role union contains `operations`, while the original membership
+table constraint does not. Stage 02 does not alter that constraint silently, so
+the role is intentionally omitted from the Team form pending a separately
+approved compatible migration.
+
+The staging function was applied with `anon` execute denied and authenticated
+execute granted. Owner visual acceptance remains pending.
+
+## Staging status
+
+- Database function applied and verified.
+- Team UI deployed in Worker version
+  `ce2e7c1d-e598-42b1-9a3a-53dd31d9926c`.
+- Live smoke: `/` 200, `/login` 200, anonymous `/app/admin` 307 to `/login`.
+- Owner desktop/mobile evidence:
+  `output/playwright/stage-02/team-desktop.png` and `team-mobile.png`.
+- The synthetic E2E membership was temporarily changed from manager to owner
+  only for screenshots and was verified restored to active manager afterward.
+- Navigation correction commit `8596bc2` is pushed but not yet live: three
+  consecutive Cloudflare final API calls failed with `fetch failed` after
+  assets uploaded. The currently live Team UI is unaffected.

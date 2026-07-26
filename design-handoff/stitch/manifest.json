@@ -1,0 +1,19 @@
+{
+  "projectId": "1788030184315606092",
+  "projectUrl": "https://stitch.withgoogle.com/u/3/projects/1788030184315606092",
+  "designSystem": "assets/17146528653703552216",
+  "canonicalScreenId": "bc969ca8c25f4c0f85da330e3a52da84",
+  "screens": [
+    {"id":"bc969ca8c25f4c0f85da330e3a52da84","device":"desktop","title":"Главный dashboard"},
+    {"id":"aeef31edcc1748a28c55b1c6b8e4345a","device":"desktop","title":"Реестр заказов"},
+    {"id":"1457210b81fd4b9dab3e3a2acbb1f223","device":"desktop","title":"Карточка заказа"},
+    {"id":"1773740c8a374476b50c72622125d47c","device":"desktop","title":"Документы заказа"},
+    {"id":"4b2b92cdfda944a8b2fc17ced62ec31b","device":"desktop","title":"Сроки"},
+    {"id":"939584efe73c42439ec0c2e8328927cf","device":"desktop","title":"MebelLegal"},
+    {"id":"31cb3e0ee1334cc291b0aaa5fe5bfa44","device":"mobile","title":"Заказы"},
+    {"id":"3bc502e0ea7f4ad2810913284e50ea4e","device":"mobile","title":"Карточка заказа"},
+    {"id":"5eeb2f1cbd48479fa409bccdbaed48e1","device":"mobile","title":"Документы заказа"},
+    {"id":"a0264d5ade16423cb732e8bab607f2a6","device":"mobile","title":"Сроки"},
+    {"id":"fd9a7075ba0042ee83909ce3e82d6a4a","device":"mobile","title":"Юридическая проверка"}
+  ]
+}

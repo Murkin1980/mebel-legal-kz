@@ -1,0 +1,19 @@
+'use client';
+import Link from 'next/link';
+import {usePathname} from 'next/navigation';
+import {AppIcon,type IconName} from './app-icon';
+const links:[string,string,IconName][]=[
+ ['/app/orders','Заказы','orders'],
+ ['/app/imports','Импорт архива','import'],
+ ['/app/settings/documents','Реквизиты','settings'],
+ ['/app/cases','MebelLegal · Кейсы','legal'],
+ ['/app/legal/sources','MebelLegal · Источники','legal'],
+ ['/app/legal/rules','MebelLegal · Правила','legal'],
+ ['/app/templates','MebelLegal · Шаблоны','legal'],
+ ['/app/audit','Журнал действий','audit'],
+ ['/app/admin','Команда','admin'],
+];
+export function AppNav({onNavigate,showAdmin}:{onNavigate?:()=>void;showAdmin:boolean}){
+ const path=usePathname();
+ return <nav className="side-nav" aria-label="Основная навигация">{links.filter(([, ,icon])=>icon!=='admin'||showAdmin).map(([href,label,icon])=><Link key={href} href={href} onClick={onNavigate} aria-current={path.startsWith(href)?'page':undefined} className={`${path.startsWith(href)?'active ':''}${icon}`}><AppIcon name={icon}/><span>{label}</span>{icon==='legal'&&<small>внутренний модуль</small>}</Link>)}</nav>;
+}

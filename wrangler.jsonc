@@ -10,7 +10,8 @@
 	"vars": {
 		"NEXT_PUBLIC_SUPABASE_URL": "https://uctedpswcbcwufzegvhl.supabase.co",
 		"NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_Uq9HO9_BnZwBCA_T3a6c9g_yYT4ziKQ",
-		"NEXT_PUBLIC_APP_ENV": "staging"
+		"NEXT_PUBLIC_APP_ENV": "staging",
+		"NEXT_PUBLIC_APP_URL": "https://mebel-legal-kz.muriktl.workers.dev"
 	},
 	"assets": {
 		"directory": ".open-next/assets",

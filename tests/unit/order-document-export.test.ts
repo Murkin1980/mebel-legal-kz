@@ -12,6 +12,8 @@ const order = {
   title: 'Кухня <Премиум>',
   customer_type: 'individual',
   customer_display_name: 'Иванов & Партнёры',
+  customer_iin_bin: null,
+  customer_address: null,
   project_type: 'manufacture_delivery',
   status: 'draft',
   currency: 'KZT',

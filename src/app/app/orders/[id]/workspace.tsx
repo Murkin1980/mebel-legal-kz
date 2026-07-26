@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { Order, OrderDeadline, OrderDocument, OrderReminder, OrderDocumentType, DeadlineKind } from '@/modules/orders/types';
+import type { Order, OrderDeadline, OrderDocument, OrderItem, OrderReminder, OrderDocumentType, DeadlineKind, OrganizationDocumentProfile } from '@/modules/orders/types';
 import { createOrderDeadlineAction, createOrderDocumentAction } from '../actions';
 
 const DOCUMENT_LABELS: Record<OrderDocumentType, string> = {
@@ -23,11 +23,15 @@ export function OrderWorkspace({
   documents,
   deadlines,
   reminders,
+  items,
+  documentProfile,
 }: {
   order: Order;
   documents: OrderDocument[];
   deadlines: OrderDeadline[];
   reminders: OrderReminder[];
+  items: OrderItem[];
+  documentProfile: OrganizationDocumentProfile | null;
 }) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
@@ -82,6 +86,34 @@ export function OrderWorkspace({
 
       {message && <div role="status" className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">{message}</div>}
 
+      {!documentProfile && (
+        <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+          <span>Для выгрузки PDF и DOCX сначала заполните реквизиты компании.</span>
+          <Link href="/app/settings/documents" className="font-semibold underline">Заполнить реквизиты</Link>
+        </div>
+      )}
+
+      <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <h3 className="text-lg font-semibold text-gray-950">Состав заказа</h3>
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="border-b border-gray-200 text-left text-xs uppercase text-gray-500">
+              <tr><th className="py-2 pr-4">Позиция</th><th className="py-2 pr-4">Количество</th><th className="py-2 pr-4">Цена</th><th className="py-2 text-right">Сумма</th></tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {items.map((item) => (
+                <tr key={item.id}>
+                  <td className="py-3 pr-4 font-medium text-gray-900">{item.name}</td>
+                  <td className="py-3 pr-4 text-gray-700">{item.quantity} {item.unit}</td>
+                  <td className="py-3 pr-4 text-gray-700">{formatMoney(item.unit_price_tiyin)}</td>
+                  <td className="py-3 text-right font-semibold text-gray-900">{formatMoney(item.amount_tiyin)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -107,12 +139,10 @@ export function OrderWorkspace({
                 <span className="text-gray-700">{formatMoney(document.amount_tiyin)}</span>
                 <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">{document.status}</span>
                 {(document.document_type === 'invoice' || document.document_type === 'act') && (
-                  <a
-                    href={`/app/orders/${order.id}/documents/${document.id}/export`}
-                    className="text-xs font-semibold text-blue-700 hover:underline"
-                  >
-                    Скачать черновик
-                  </a>
+                  <>
+                    <a href={`/app/orders/${order.id}/documents/${document.id}/export?format=pdf`} className="text-xs font-semibold text-blue-700 hover:underline">PDF</a>
+                    <a href={`/app/orders/${order.id}/documents/${document.id}/export?format=docx`} className="text-xs font-semibold text-blue-700 hover:underline">DOCX</a>
+                  </>
                 )}
               </div>
             </div>

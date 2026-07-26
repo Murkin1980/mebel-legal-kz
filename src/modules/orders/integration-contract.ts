@@ -26,6 +26,12 @@ export const orderSnapshotV1Adapter: OrderImportAdapter = {
       sourceSystem: snapshot.sourceSystem,
       sourceOrderId: snapshot.sourceOrderId,
       sourceOrderVersion: snapshot.sourceOrderVersion,
+      items: [{
+        name: snapshot.project.title,
+        quantity: '1',
+        unit: 'заказ',
+        unitPriceTiyin: snapshot.amount.amountTiyin,
+      }],
     };
   },
 };
