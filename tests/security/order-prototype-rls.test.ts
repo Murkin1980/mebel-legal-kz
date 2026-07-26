@@ -9,12 +9,21 @@ const migrationPath = join(
   '20260724205035_unified_order_documents_prototype.sql'
 );
 const sql = readFileSync(migrationPath, 'utf8');
-const tables = ['orders', 'order_documents', 'order_deadlines', 'order_reminders'];
+const immutableTables = ['orders', 'order_documents', 'order_deadlines', 'order_reminders'];
+const tables = [...immutableTables, 'order_items', 'organization_document_profiles'];
 
 describe('order prototype migration security', () => {
-  it.each(tables)('enables RLS and denies DELETE on %s', (table) => {
+  it.each(tables)('enables RLS on %s', (table) => {
     expect(sql).toMatch(new RegExp(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`, 'i'));
+  });
+
+  it.each(immutableTables)('denies DELETE on %s', (table) => {
     expect(sql).toMatch(new RegExp(`POLICY "${table}_delete"[\\s\\S]*USING \\(FALSE\\)`, 'i'));
+  });
+
+  it('makes order items append-only', () => {
+    expect(sql).toMatch(/POLICY "order_items_no_update"[\s\S]*USING \(FALSE\)/i);
+    expect(sql).toMatch(/POLICY "order_items_no_delete"[\s\S]*USING \(FALSE\)/i);
   });
 
   it('checks active organization membership in policies', () => {
@@ -24,7 +33,7 @@ describe('order prototype migration security', () => {
 
   it('uses explicit grants for Data API access and no anon grant', () => {
     expect(sql).toContain('GRANT SELECT, INSERT, UPDATE ON orders TO authenticated');
-    expect(sql).toContain('REVOKE ALL ON orders, order_documents, order_deadlines, order_reminders FROM anon, authenticated');
+    expect(sql).toContain('REVOKE ALL ON orders, order_documents, order_deadlines, order_reminders, organization_document_profiles, order_items FROM anon, authenticated');
     expect(sql).not.toMatch(/GRANT\s+.+\s+TO\s+anon/i);
   });
 
@@ -41,7 +50,7 @@ describe('order prototype migration security', () => {
     ]) {
       expect(sql).toMatch(
         new RegExp(
-          `CREATE OR REPLACE FUNCTION ${command}[\\s\\S]*SECURITY DEFINER[\\s\\S]*SET search_path = public`,
+          `CREATE OR REPLACE FUNCTION ${command}[\\s\\S]*SECURITY DEFINER[\\s\\S]*SET search_path = ''`,
           'i'
         )
       );
@@ -51,10 +60,10 @@ describe('order prototype migration security', () => {
       );
     }
     expect(sql).toMatch(
-      /create_order_with_audit[\s\S]*INSERT INTO orders[\s\S]*INSERT INTO audit_events/i
+      /create_order_with_audit[\s\S]*INSERT INTO public\.orders[\s\S]*INSERT INTO public\.audit_events/i
     );
     expect(sql).toMatch(
-      /create_order_deadline_with_audit[\s\S]*INSERT INTO order_deadlines[\s\S]*INSERT INTO order_reminders[\s\S]*INSERT INTO audit_events/i
+      /create_order_deadline_with_audit[\s\S]*INSERT INTO public\.order_deadlines[\s\S]*INSERT INTO public\.order_reminders[\s\S]*INSERT INTO public\.audit_events/i
     );
     expect(sql).toContain('p_actor_user_id IS DISTINCT FROM auth.uid()');
   });

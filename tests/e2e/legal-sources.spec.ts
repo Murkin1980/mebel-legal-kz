@@ -93,12 +93,12 @@ test.describe('Navigation Integration', () => {
     await expect(rulesLink).toBeVisible();
   });
 
-  test('should have stage 2 banner', async ({ page }) => {
+  test('should keep legal sources inside the prototype workspace', async ({ page }) => {
     await loginAsTestUser(page);
     await page.goto('/app/cases');
     await page.waitForLoadState('networkidle');
 
-    await expect(page.locator('text=Этап 2')).toBeVisible();
+    await expect(page.getByText('Рабочий прототип', { exact: false })).toBeVisible();
   });
 });
 

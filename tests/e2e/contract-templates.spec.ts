@@ -122,7 +122,7 @@ test.describe('Package Detail Page', () => {
   });
 });
 
-test.describe('Navigation - Stage 3', () => {
+test.describe('Legal module navigation', () => {
   test('should have templates link in nav', async ({ page }) => {
     await loginAsTestUser(page);
     await page.goto('/app');
@@ -132,11 +132,11 @@ test.describe('Navigation - Stage 3', () => {
     await expect(templatesLink).toBeVisible();
   });
 
-  test('should show stage 3 banner', async ({ page }) => {
+  test('should show prototype safety banner', async ({ page }) => {
     await loginAsTestUser(page);
     await page.goto('/app');
     await page.waitForLoadState('networkidle');
 
-    await expect(page.locator('text=Этап 3')).toBeVisible();
+    await expect(page.getByText('Рабочий прототип', { exact: false })).toBeVisible();
   });
 });
