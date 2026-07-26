@@ -9,22 +9,22 @@
     *{box-sizing:border-box}body{margin:0;background:var(--i);color:var(--t);font:15px/1.55 Manrope,Segoe UI,sans-serif}
     main{max-width:980px;margin:auto;padding:48px 24px}.top{display:flex;justify-content:space-between;gap:24px;align-items:end}
     h1{margin:0;font-size:38px;letter-spacing:-.04em}.badge{padding:7px 12px;border-radius:999px;background:#efe7f5;color:var(--p);font-weight:700}
-    .bar{height:10px;margin:28px 0 38px;border-radius:99px;background:#e7dfd5;overflow:hidden}.bar i{display:block;width:8%;height:100%;background:linear-gradient(90deg,var(--p),var(--g))}
+    .bar{height:10px;margin:28px 0 38px;border-radius:99px;background:#e7dfd5;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--p),var(--g))}
     .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.card{background:white;border:1px solid #e5dce8;border-radius:12px;padding:20px;box-shadow:0 8px 28px #43225d0b}
     .card b{display:block;margin-bottom:6px}.done{border-left:4px solid var(--g)}.active{border-left:4px solid var(--p)}.pending{opacity:.68}
     small{color:var(--m)}footer{margin-top:32px;color:var(--m)}@media(max-width:700px){.grid{grid-template-columns:1fr}.top{display:block}.badge{display:inline-block;margin-top:16px}}
   </style>
 </head>
 <body><main>
-  <div class="top"><div><small>MEBELDOCS · ПИЛОТНЫЙ РЕЛИЗ</small><h1>Прогресс реализации</h1></div><span class="badge">6 из 6 · готово</span></div>
-  <div class="bar"><i style="width:100%"></i></div>
+  <div class="top"><div><small>MEBELDOCS · ПИЛОТНЫЙ РЕЛИЗ</small><h1>Прогресс реализации</h1></div><span class="badge">Stage 03 · локально готов</span></div>
+  <div class="bar"><i style="width:50%"></i></div>
   <section class="grid">
     <article class="card done"><b>1. Инвентаризация</b><small>Завершено: выявлены границы onboarding и импорта.</small></article>
     <article class="card done"><b>2. Утверждённый интерфейс</b><small>Фиолетово-золотой shell Stitch перенесён в приложение.</small></article>
     <article class="card done"><b>3. Админка и приглашения</b><small>Создание компании, роли и одноразовая ссылка готовы.</small></article>
-    <article class="card done"><b>4. Импорт архива</b><small>ZIP + manifest, предпросмотр, закрытое хранение и аудит готовы.</small></article>
-    <article class="card done"><b>5. Миграции и QA</b><small>Миграция staging применена; полный preflight зелёный.</small></article>
-    <article class="card done"><b>6. Публикация</b><small>Cloudflare version 528052e0 опубликована; live smoke пройден.</small></article>
+    <article class="card active"><b>4. Импорт архива</b><small>История, повтор failed-партии, компенсация, шаблон и private download локально готовы.</small></article>
+    <article class="card active"><b>5. QA Stage 03</b><small>Typecheck, lint, 240 unit, 119 integration, 168 security, build и 2 E2E пройдены.</small></article>
+    <article class="card pending"><b>6. Публикация Stage 03</b><small>Отложена до стабильного соединения: будет один пакет Cloudflare вместо повторных загрузок.</small></article>
   </section>
   <footer>Обновлено: 26 июля 2026 · Реальные данные и секреты не используются.</footer>
   <section class="card" style="margin-top:22px">
@@ -39,5 +39,12 @@
     <small>Список участников, роли, disable/restore, защита последнего owner,
     повторные приглашения и audit реализованы. База и Team UI опубликованы;
     последний навигационный фикс ожидает восстановления Cloudflare API.</small>
+  </section>
+  <section class="card active" style="margin-top:12px">
+    <b>Stage 03 · Надёжный импорт архива</b>
+    <small>Добавлены история и карточка партии, ZIP-шаблон, повтор failed-импорта,
+    безопасная компенсация частично созданных сущностей и tenant-checked
+    60-секундная ссылка на private Storage. Desktop/mobile evidence:
+    output/playwright/stage-03/. Деплой ещё не выполнялся из-за слабой сети.</small>
   </section>
 </main></body></html>

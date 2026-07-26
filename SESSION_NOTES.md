@@ -1150,3 +1150,37 @@ RLS: роль `operations` добавлена для execution-задач. Дл�
   owner desktop/mobile screenshots were captured with synthetic data.
 - Navigation correction `8596bc2` remains pending deployment after repeated
   Cloudflare API `fetch failed` responses; it is pushed and locally verified.
+
+## Session: Stage 03 reliable archive import
+
+**Date:** 2026-07-26
+**Branch:** `codex/complete-mebeldocs-release`
+
+- Added tenant-scoped import history and a batch detail screen.
+- Added a downloadable synthetic ZIP/manifest template validated by the same
+  archive preflight as user uploads.
+- Added retry semantics: completed SHA is idempotent, processing SHA returns
+  conflict, and failed SHA is cleaned and retried using the same batch.
+- Added best-effort compensation for newly created archive orders, file rows
+  and private Storage objects when a commit fails. This is a compensating
+  workflow, not a single PostgreSQL transaction across Database and Storage.
+- Added a server-only, tenant-checked private download route with a 60-second
+  signed URL. No public bucket or service-role browser exposure was added.
+- Visual evidence: `output/playwright/stage-03/imports-desktop.png` and
+  `output/playwright/stage-03/imports-mobile.png`.
+- Passed typecheck, lint, 240 unit, 119 integration, 168 security, Next build,
+  OpenNext Cloudflare build and 2 focused E2E checks. GitHub Actions were not
+  used.
+- Cloudflare deployment is intentionally batched until the connection is
+  stable; the current staging version is unchanged.
+
+### Foundation Check
+
+- [x] Order remains the top-level aggregate; contract remains optional.
+- [x] Tenant isolation is applied to history, detail and download queries.
+- [x] Server authorization is required before service-role Storage signing.
+- [x] Money conversion remains integer tiyin and does not use float storage.
+- [x] Completed archive SHA remains idempotent; failed SHA is retryable.
+- [x] Audit remains append-only and records success/failure.
+- [x] No real data, secrets, AI/RAG, ESF, bank or claims scope was added.
+- [x] Tests were added in proportion to import and download security risk.
