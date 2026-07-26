@@ -42,3 +42,17 @@ approved compatible migration.
 
 The staging function was applied with `anon` execute denied and authenticated
 execute granted. Owner visual acceptance remains pending.
+
+## Staging status
+
+- Database function applied and verified.
+- Team UI deployed in Worker version
+  `ce2e7c1d-e598-42b1-9a3a-53dd31d9926c`.
+- Live smoke: `/` 200, `/login` 200, anonymous `/app/admin` 307 to `/login`.
+- Owner desktop/mobile evidence:
+  `output/playwright/stage-02/team-desktop.png` and `team-mobile.png`.
+- The synthetic E2E membership was temporarily changed from manager to owner
+  only for screenshots and was verified restored to active manager afterward.
+- Navigation correction commit `8596bc2` is pushed but not yet live: three
+  consecutive Cloudflare final API calls failed with `fetch failed` after
+  assets uploaded. The currently live Team UI is unaffected.

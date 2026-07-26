@@ -1146,3 +1146,7 @@ RLS: роль `operations` добавлена для execution-задач. Дл�
 - Passed 239 unit, 119 integration, 164 security, lint, typecheck, Next and
   OpenNext builds locally; GitHub Actions were not used because its quota ended.
 - Existing `operations` role/schema drift is recorded and not silently migrated.
+- Stage 02 database function and Team UI reached staging version `ce2e7c1d`;
+  owner desktop/mobile screenshots were captured with synthetic data.
+- Navigation correction `8596bc2` remains pending deployment after repeated
+  Cloudflare API `fetch failed` responses; it is pushed and locally verified.
