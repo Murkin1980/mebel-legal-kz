@@ -391,17 +391,17 @@ CREATE OR REPLACE FUNCTION create_order_with_audit(
 ) RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
 DECLARE
-  v_order orders%ROWTYPE;
+  v_order public.orders%ROWTYPE;
   v_existing_entity_id UUID;
 BEGIN
   IF p_actor_user_id IS DISTINCT FROM auth.uid() THEN
     RAISE EXCEPTION 'actor mismatch' USING ERRCODE = '42501';
   END IF;
   IF NOT EXISTS (
-    SELECT 1 FROM organization_memberships
+    SELECT 1 FROM public.organization_memberships
     WHERE organization_id = p_organization_id
       AND user_id = auth.uid()
       AND status = 'active'
@@ -411,15 +411,15 @@ BEGIN
   END IF;
 
   SELECT entity_id INTO v_existing_entity_id
-  FROM audit_events
+  FROM public.audit_events
   WHERE organization_id = p_organization_id AND command_id = p_command_id;
   IF v_existing_entity_id IS NOT NULL THEN
-    SELECT * INTO v_order FROM orders
+    SELECT * INTO v_order FROM public.orders
     WHERE id = v_existing_entity_id AND organization_id = p_organization_id;
     RETURN to_jsonb(v_order);
   END IF;
 
-  INSERT INTO orders (
+  INSERT INTO public.orders (
     organization_id, order_number, title, customer_type, customer_display_name,
     customer_iin_bin, customer_address,
     project_type, total_amount_tiyin, contract_required, production_due_date,
@@ -445,7 +445,7 @@ BEGIN
     p_actor_user_id
   ) RETURNING * INTO v_order;
 
-  INSERT INTO order_items (
+  INSERT INTO public.order_items (
     organization_id, order_id, position, name, quantity, unit,
     unit_price_tiyin, amount_tiyin
   )
@@ -460,14 +460,14 @@ BEGIN
     ROUND(
       (item.value->>'quantity')::NUMERIC * (item.value->>'unit_price_tiyin')::BIGINT
     )::BIGINT
-  FROM jsonb_array_elements(p_order->'items') WITH ORDINALITY AS item(value, ordinality);
+  FROM pg_catalog.jsonb_array_elements(p_order->'items') WITH ORDINALITY AS item(value, ordinality);
 
-  IF (SELECT COALESCE(SUM(amount_tiyin), 0) FROM order_items WHERE order_id = v_order.id)
+  IF (SELECT COALESCE(SUM(amount_tiyin), 0) FROM public.order_items WHERE order_id = v_order.id)
      <> v_order.total_amount_tiyin THEN
     RAISE EXCEPTION 'order total does not match item total' USING ERRCODE = '22000';
   END IF;
 
-  INSERT INTO audit_events (
+  INSERT INTO public.audit_events (
     organization_id, actor_user_id, event_type, entity_type, entity_id,
     command_id, idempotency_key, payload
   ) VALUES (
@@ -493,11 +493,11 @@ CREATE OR REPLACE FUNCTION create_order_document_with_audit(
 ) RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
 DECLARE
-  v_order orders%ROWTYPE;
-  v_document order_documents%ROWTYPE;
+  v_order public.orders%ROWTYPE;
+  v_document public.order_documents%ROWTYPE;
   v_version INTEGER;
   v_amount BIGINT;
 BEGIN
@@ -505,7 +505,7 @@ BEGIN
     RAISE EXCEPTION 'actor mismatch' USING ERRCODE = '42501';
   END IF;
   IF NOT EXISTS (
-    SELECT 1 FROM organization_memberships
+    SELECT 1 FROM public.organization_memberships
     WHERE organization_id = p_organization_id
       AND user_id = auth.uid()
       AND status = 'active'
@@ -514,14 +514,14 @@ BEGIN
     RAISE EXCEPTION 'insufficient document permissions' USING ERRCODE = '42501';
   END IF;
 
-  SELECT * INTO v_document FROM order_documents
+  SELECT * INTO v_document FROM public.order_documents
   WHERE id = (
-    SELECT entity_id FROM audit_events
+    SELECT entity_id FROM public.audit_events
     WHERE organization_id = p_organization_id AND command_id = p_command_id
   );
   IF FOUND THEN RETURN to_jsonb(v_document); END IF;
 
-  SELECT * INTO v_order FROM orders
+  SELECT * INTO v_order FROM public.orders
   WHERE id = (p_document->>'order_id')::UUID
     AND organization_id = p_organization_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'order not found' USING ERRCODE = 'P0002'; END IF;
@@ -534,7 +534,7 @@ BEGIN
     )
   );
   SELECT COALESCE(MAX(version), 0) + 1 INTO v_version
-  FROM order_documents
+  FROM public.order_documents
   WHERE organization_id = p_organization_id
     AND document_type = p_document->>'document_type'
     AND document_number = p_document->>'document_number';
@@ -543,7 +543,7 @@ BEGIN
     v_order.total_amount_tiyin
   );
 
-  INSERT INTO order_documents (
+  INSERT INTO public.order_documents (
     organization_id, order_id, document_type, document_number, version,
     amount_tiyin, contract_package_id, content_snapshot, created_by
   ) VALUES (
@@ -567,19 +567,19 @@ BEGIN
       'contract_optional', TRUE,
       'supplier', (
         SELECT to_jsonb(profile) - 'updated_by'
-        FROM organization_document_profiles profile
+        FROM public.organization_document_profiles profile
         WHERE profile.organization_id = p_organization_id
       ),
       'items', (
         SELECT COALESCE(jsonb_agg(to_jsonb(item) ORDER BY item.position), '[]'::jsonb)
-        FROM order_items item
+        FROM public.order_items item
         WHERE item.order_id = v_order.id
       )
     ),
     p_actor_user_id
   ) RETURNING * INTO v_document;
 
-  INSERT INTO audit_events (
+  INSERT INTO public.audit_events (
     organization_id, actor_user_id, event_type, entity_type, entity_id,
     command_id, idempotency_key, payload
   ) VALUES (
@@ -679,17 +679,17 @@ CREATE OR REPLACE FUNCTION create_order_deadline_with_audit(
 ) RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
 DECLARE
-  v_deadline order_deadlines%ROWTYPE;
+  v_deadline public.order_deadlines%ROWTYPE;
   v_reminders JSONB;
 BEGIN
   IF p_actor_user_id IS DISTINCT FROM auth.uid() THEN
     RAISE EXCEPTION 'actor mismatch' USING ERRCODE = '42501';
   END IF;
   IF NOT EXISTS (
-    SELECT 1 FROM organization_memberships
+    SELECT 1 FROM public.organization_memberships
     WHERE organization_id = p_organization_id
       AND user_id = auth.uid()
       AND status = 'active'
@@ -698,27 +698,27 @@ BEGIN
     RAISE EXCEPTION 'insufficient deadline permissions' USING ERRCODE = '42501';
   END IF;
 
-  SELECT * INTO v_deadline FROM order_deadlines
+  SELECT * INTO v_deadline FROM public.order_deadlines
   WHERE id = (
-    SELECT entity_id FROM audit_events
+    SELECT entity_id FROM public.audit_events
     WHERE organization_id = p_organization_id AND command_id = p_command_id
   );
   IF FOUND THEN
     SELECT COALESCE(jsonb_agg(to_jsonb(r) ORDER BY r.remind_on), '[]'::jsonb)
       INTO v_reminders
-    FROM order_reminders r WHERE r.deadline_id = v_deadline.id;
+    FROM public.order_reminders r WHERE r.deadline_id = v_deadline.id;
     RETURN jsonb_build_object('deadline', to_jsonb(v_deadline), 'reminders', v_reminders);
   END IF;
 
   IF NOT EXISTS (
-    SELECT 1 FROM orders
+    SELECT 1 FROM public.orders
     WHERE id = (p_deadline->>'order_id')::UUID
       AND organization_id = p_organization_id
   ) THEN
     RAISE EXCEPTION 'order not found' USING ERRCODE = 'P0002';
   END IF;
 
-  INSERT INTO order_deadlines (
+  INSERT INTO public.order_deadlines (
     organization_id, order_id, order_document_id, kind, title, due_date,
     working_days_offset, created_by
   ) VALUES (
@@ -732,11 +732,11 @@ BEGIN
     p_actor_user_id
   ) RETURNING * INTO v_deadline;
 
-  INSERT INTO order_reminders (organization_id, deadline_id, remind_on)
+  INSERT INTO public.order_reminders (organization_id, deadline_id, remind_on)
   SELECT p_organization_id, v_deadline.id, value
-  FROM unnest(p_remind_on) AS value;
+  FROM pg_catalog.unnest(p_remind_on) AS value;
 
-  INSERT INTO audit_events (
+  INSERT INTO public.audit_events (
     organization_id, actor_user_id, event_type, entity_type, entity_id,
     command_id, idempotency_key, payload
   ) VALUES (
@@ -752,7 +752,7 @@ BEGIN
 
   SELECT COALESCE(jsonb_agg(to_jsonb(r) ORDER BY r.remind_on), '[]'::jsonb)
     INTO v_reminders
-  FROM order_reminders r WHERE r.deadline_id = v_deadline.id;
+  FROM public.order_reminders r WHERE r.deadline_id = v_deadline.id;
   RETURN jsonb_build_object('deadline', to_jsonb(v_deadline), 'reminders', v_reminders);
 END;
 $$;
@@ -760,6 +760,9 @@ $$;
 REVOKE ALL ON FUNCTION create_order_with_audit(UUID, UUID, UUID, JSONB) FROM PUBLIC;
 REVOKE ALL ON FUNCTION create_order_document_with_audit(UUID, UUID, UUID, JSONB) FROM PUBLIC;
 REVOKE ALL ON FUNCTION create_order_deadline_with_audit(UUID, UUID, UUID, JSONB, DATE[]) FROM PUBLIC;
+REVOKE ALL ON FUNCTION create_order_with_audit(UUID, UUID, UUID, JSONB) FROM anon;
+REVOKE ALL ON FUNCTION create_order_document_with_audit(UUID, UUID, UUID, JSONB) FROM anon;
+REVOKE ALL ON FUNCTION create_order_deadline_with_audit(UUID, UUID, UUID, JSONB, DATE[]) FROM anon;
 REVOKE ALL ON FUNCTION save_organization_document_profile_with_audit(UUID, UUID, UUID, JSONB) FROM PUBLIC;
 REVOKE ALL ON FUNCTION save_organization_document_profile_with_audit(UUID, UUID, UUID, JSONB) FROM anon;
 GRANT EXECUTE ON FUNCTION create_order_with_audit(UUID, UUID, UUID, JSONB) TO authenticated;
