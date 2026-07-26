@@ -20,6 +20,10 @@ Date: 2026-07-26
 - Integration: 119/119.
 - Security: 164/164, including new tenant/owner/last-owner/audit/grant checks.
 - Next.js and OpenNext Cloudflare builds passed.
+- Full E2E reached 65/71; four stable navigation regressions were corrected
+  and the affected focused slice then passed 6/6. Two remaining full-suite
+  failures were authentication timing/state interference under six parallel
+  workers, not Stage 02 membership assertions.
 
 ## Foundation check
 
@@ -36,5 +40,5 @@ table constraint does not. Stage 02 does not alter that constraint silently, so
 the role is intentionally omitted from the Team form pending a separately
 approved compatible migration.
 
-Staging database application, deployment, invite-flow verification and owner
-visual acceptance remain pending.
+The staging function was applied with `anon` execute denied and authenticated
+execute granted. Owner visual acceptance remains pending.
