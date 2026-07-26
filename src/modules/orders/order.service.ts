@@ -11,7 +11,14 @@ import {
   type CreateOrderInput,
 } from './validation';
 import { reminderDates } from './working-days';
-import type { Order, OrderDeadline, OrderDocument, OrderReminder } from './types';
+import type {
+  Order,
+  OrderDeadline,
+  OrderDocument,
+  OrderItem,
+  OrderReminder,
+  OrganizationDocumentProfile,
+} from './types';
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 const ORDER_WRITERS: UserRole[] = ['owner', 'manager', 'designer', 'operations'];
@@ -55,6 +62,8 @@ export class OrderService {
         title: validated.title,
         customer_type: validated.customerType,
         customer_display_name: validated.customerDisplayName,
+        customer_iin_bin: validated.customerIinBin || null,
+        customer_address: validated.customerAddress || null,
         project_type: validated.projectType,
         total_amount_tiyin: validated.totalAmountTiyin,
         contract_required: validated.contractRequired,
@@ -64,6 +73,12 @@ export class OrderService {
         source_order_id: validated.sourceOrderId || null,
         source_order_version: validated.sourceOrderVersion || null,
         legacy_legal_case_id: validated.legacyLegalCaseId || null,
+        items: validated.items.map((item) => ({
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          unit_price_tiyin: item.unitPriceTiyin,
+        })),
       },
     });
     if (error || !order) {
@@ -98,7 +113,13 @@ export class OrderService {
       .single();
     if (!order) throw notFound('Заказ не найден');
 
-    const [{ data: documents }, { data: deadlines }, { data: reminders }] =
+    const [
+      { data: documents },
+      { data: deadlines },
+      { data: reminders },
+      { data: items },
+      { data: documentProfile },
+    ] =
       await Promise.all([
         supabase
           .from('order_documents')
@@ -117,6 +138,17 @@ export class OrderService {
           .select('*')
           .eq('organization_id', organizationId)
           .order('remind_on'),
+        supabase
+          .from('order_items')
+          .select('*')
+          .eq('order_id', orderId)
+          .eq('organization_id', organizationId)
+          .order('position'),
+        supabase
+          .from('organization_document_profiles')
+          .select('*')
+          .eq('organization_id', organizationId)
+          .maybeSingle(),
       ]);
     const deadlineIds = new Set((deadlines || []).map((deadline) => deadline.id));
     return {
@@ -126,7 +158,24 @@ export class OrderService {
       reminders: (reminders || []).filter((item) =>
         deadlineIds.has(item.deadline_id)
       ) as OrderReminder[],
+      items: (items || []) as OrderItem[],
+      documentProfile: documentProfile as OrganizationDocumentProfile | null,
     };
+  }
+
+  async getDocumentProfile(
+    organizationId: string
+  ): Promise<OrganizationDocumentProfile | null> {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('organization_document_profiles')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .maybeSingle();
+    if (error) {
+      throw new AppError('INTERNAL_ERROR', 'Не удалось загрузить реквизиты', 500);
+    }
+    return data as OrganizationDocumentProfile | null;
   }
 
   async createDocument(

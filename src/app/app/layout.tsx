@@ -27,6 +27,9 @@ export default function AppLayout({
               <Link href="/app/orders" className="font-semibold text-blue-700 hover:text-blue-900">
                 Заказы
               </Link>
+              <Link href="/app/settings/documents" className="text-gray-600 hover:text-gray-900">
+                Реквизиты
+              </Link>
               <Link href="/app/cases" className="text-gray-600 hover:text-gray-900">
                 Юридические кейсы
               </Link>

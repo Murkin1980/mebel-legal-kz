@@ -18,6 +18,8 @@ export interface Order {
   title: string;
   customer_type: CustomerType;
   customer_display_name: string;
+  customer_iin_bin: string | null;
+  customer_address: string | null;
   project_type: ProjectType;
   status: OrderStatus;
   currency: 'KZT';
@@ -31,6 +33,36 @@ export interface Order {
   delivery_due_date: string | null;
   created_by: string;
   created_at: string;
+  updated_at: string;
+  version: number;
+}
+
+export interface OrderItem {
+  id: string;
+  organization_id: string;
+  order_id: string;
+  position: number;
+  name: string;
+  quantity: string;
+  unit: string;
+  unit_price_tiyin: string;
+  amount_tiyin: string;
+  created_at: string;
+}
+
+export interface OrganizationDocumentProfile {
+  organization_id: string;
+  legal_name: string;
+  iin_bin: string;
+  address: string;
+  phone: string | null;
+  email: string | null;
+  bank_name: string | null;
+  iik: string | null;
+  bik: string | null;
+  kbe: string | null;
+  knp: string | null;
+  signatory_name: string | null;
   updated_at: string;
   version: number;
 }

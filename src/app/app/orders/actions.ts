@@ -33,6 +33,18 @@ function tengeToTiyin(value: string): string {
   return (BigInt(whole) * 100n + BigInt(fraction.padEnd(2, '0'))).toString();
 }
 
+function multiplyMoney(quantity: string, priceTiyin: string): string {
+  if (!/^\d+(?:\.\d{1,3})?$/.test(quantity)) {
+    throw new AppError('VALIDATION_ERROR', 'Количество должно быть положительным числом', 400);
+  }
+  const [whole, fraction = ''] = quantity.split('.');
+  const thousandths = BigInt(whole) * 1000n + BigInt(fraction.padEnd(3, '0'));
+  if (thousandths <= 0n) {
+    throw new AppError('VALIDATION_ERROR', 'Количество должно быть больше нуля', 400);
+  }
+  return ((thousandths * BigInt(priceTiyin) + 500n) / 1000n).toString();
+}
+
 function publicError(error: unknown): string {
   if (error instanceof AppError) return error.message;
   if (error instanceof Error && error.name === 'ZodError') return 'Проверьте обязательные поля';
@@ -46,7 +58,9 @@ export async function createOrderAction(
   try {
     const ctx = await getAuthContext();
     if (!ctx) return { error: 'Не авторизован' };
-    const amount = String(formData.get('totalAmount') || '0');
+    const quantity = String(formData.get('itemQuantity') || '1').trim().replace(',', '.');
+    const unitPriceTiyin = tengeToTiyin(String(formData.get('itemUnitPrice') || '0'));
+    const totalAmountTiyin = multiplyMoney(quantity, unitPriceTiyin);
     const order = await orderService.createOrder(
       {
         orderNumber: String(formData.get('orderNumber') || ''),
@@ -56,15 +70,23 @@ export async function createOrderAction(
           | 'individual_entrepreneur'
           | 'legal_entity',
         customerDisplayName: String(formData.get('customerDisplayName') || ''),
+        customerIinBin: String(formData.get('customerIinBin') || '') || undefined,
+        customerAddress: String(formData.get('customerAddress') || '') || undefined,
         projectType: String(formData.get('projectType') || '') as
           | 'manufacture_only'
           | 'manufacture_delivery'
           | 'manufacture_delivery_installation',
-        totalAmountTiyin: tengeToTiyin(amount),
+        totalAmountTiyin,
         contractRequired: formData.get('contractRequired') === 'on',
         productionDueDate: String(formData.get('productionDueDate') || '') || undefined,
         deliveryDueDate: String(formData.get('deliveryDueDate') || '') || undefined,
         sourceSystem: 'manual',
+        items: [{
+          name: String(formData.get('itemName') || ''),
+          quantity,
+          unit: String(formData.get('itemUnit') || 'шт.'),
+          unitPriceTiyin,
+        }],
       },
       ctx.organizationId,
       ctx.userId
