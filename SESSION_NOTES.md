@@ -1125,6 +1125,8 @@ RLS: роль `operations` добавлена для execution-задач. Дл�
   OpenNext build, runtime audit and 8 public E2E checks.
 - Full authenticated E2E was limited by Supabase network timeouts.
 - Visual evidence is stored in `output/playwright/stage-01/`.
+- Deployed Cloudflare version `d34c41c8-8d62-44f2-b9c8-7548ad7d655d`;
+  live smoke returned `/` 200, `/login` 200 and `/app` 307 to `/login`.
 
 ### Foundation Check
 

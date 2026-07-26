@@ -35,3 +35,13 @@ as an external verification limitation and is not claimed as passed.
 - No real customer data or secret values added.
 
 Owner visual acceptance remains pending the staging deployment.
+
+## Deployment
+
+- Commit: `af63da0`
+- Cloudflare version: `d34c41c8-8d62-44f2-b9c8-7548ad7d655d`
+- URL: `https://mebel-legal-kz.muriktl.workers.dev`
+- Live smoke: `/` 200, `/login` 200, `/app` 307 to `/login`.
+- Published screenshots:
+  `output/playwright/stage-01/staging-login-desktop.png` and
+  `output/playwright/stage-01/staging-login-mobile.png`.
