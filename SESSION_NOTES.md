@@ -1135,3 +1135,14 @@ RLS: роль `operations` добавлена для execution-задач. Дл�
 - [x] Money and audit/versioning behavior were not changed.
 - [x] No prohibited AI/RAG, ESF, bank or claims scope was added.
 - [x] No real data or secret values were added to Git.
+## Session: Stage 02 team administration
+
+**Date:** 2026-07-26
+
+- Added owner-only team list, role changes, disable/restore and repeat invites.
+- Added atomic `manage_organization_member` with tenant authorization,
+  last-owner protection and audit events.
+- Hid Team navigation for non-owner memberships while preserving route checks.
+- Passed 239 unit, 119 integration, 164 security, lint, typecheck, Next and
+  OpenNext builds locally; GitHub Actions were not used because its quota ended.
+- Existing `operations` role/schema drift is recorded and not silently migrated.
