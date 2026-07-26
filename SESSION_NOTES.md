@@ -1088,3 +1088,27 @@ RLS: роль `operations` добавлена для execution-задач. Дл�
   `/app/imports` без сессии = 307 на `/login`.
 
 ---
+## Сессия: управляемый handoff OpenCode
+
+**Дата:** 26 июля 2026 года
+
+### Выполнено
+
+- создан `OPENCODE_FULL_PROJECT_INSTRUCTIONS.md` с шестью последовательными stages;
+- зафиксированы роли OpenCode (исполнитель), Codex (ревью), владелец (визуальная
+  приёмка) и Perplexity (необязательный внешний аналитик);
+- каждый stage обязан завершаться тестами, Foundation Check, отчётом, desktop/mobile
+  скриншотами, commit/push, Cloudflare staging deployment и остановкой на приёмку;
+- добавлена точная карта 11 утверждённых Stitch-экранов и design system;
+- добавлены машинный `design-handoff/stitch/manifest.json` и шаблон stage report;
+- `ROADMAP.md` обновлён под тройную приёмку `OC / CR / OV`.
+
+### Ограничения
+
+- Stitch ZIP не создавался без фактического экспорта HTML/PNG: пустой или выдуманный
+  архив не помогает кодеру.
+- В handoff нельзя включать секреты, реальные документы, `.env`, `.git`, `node_modules`
+  или build artifacts.
+- Документационный handoff не является продуктовым stage и не требует deployment.
+
+---

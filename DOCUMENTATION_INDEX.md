@@ -22,6 +22,7 @@
 | `DOCUMENTATION_INDEX.md` | Этот навигатор и приоритет документов. |
 | `FOUNDATION.md` | Главный архитектурный контракт; имеет приоритет. |
 | `MERGE_MEBELDOCS_MEBELLEGAL_INSTRUCTIONS.md` | План объединения и безопасной миграции двух проектов. |
+| `OPENCODE_FULL_PROJECT_INSTRUCTIONS.md` | Исполняемый поэтапный handoff OpenCode с тройной приёмкой и Stitch-картой. |
 | `PRODUCT.md` | Актуальное продуктовое определение единого MebelDocs. |
 | `README.md` | Быстрый старт и фактический статус реализации. |
 | `ROADMAP.md` | Ближайшие релизы и явно отложенные функции. |
@@ -35,6 +36,8 @@
 - `docs/adr/001-system-boundaries.md` — границы систем.
 - `docs/adr/002-unified-order-document-workflow.md` — решение «заказ как корень».
 - `docs/deployment/cloudflare-workers.md` — сборка и развёртывание Cloudflare.
+- `design-handoff/stitch/manifest.json` — машинно-читаемая карта утверждённых Stitch-экранов.
+- `reports/OPENCODE_STAGE_REPORT_TEMPLATE.md` — обязательный шаблон отчёта исполнителя.
 
 ## Приоритет при конфликте
 

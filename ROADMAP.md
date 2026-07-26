@@ -1,5 +1,24 @@
 # ROADMAP
 
+## Фаза завершения продукта — управляемый handoff OpenCode → Codex
+
+Источник исполнения и тройной приёмки:
+[`OPENCODE_FULL_PROJECT_INSTRUCTIONS.md`](./OPENCODE_FULL_PROJECT_INSTRUCTIONS.md).
+
+Каждый этап выполняется отдельно и заканчивается документацией, desktop/mobile
+скриншотами, commit/push, Cloudflare staging deployment, Codex review и визуальной
+приёмкой владельца.
+
+- [ ] Stage 01 — единая продуктовая оболочка по утверждённому Stitch-дизайну.
+- [ ] Stage 02 — законченная админка участников, ролей и приглашений.
+- [ ] Stage 03 — история импорта, private download и атомарная обработка архива.
+- [ ] Stage 04 — несколько позиций, версионные изменения, статусы и календарь РК.
+- [ ] Stage 05 — real-DB/E2E/security/accessibility hardening.
+- [ ] Stage 06 — синтетический пилот, инструкции и финальный rollout.
+
+Правило: следующий stage не начинается до отдельного verdict Codex и визуального
+решения владельца по опубликованному предыдущему stage.
+
 ## R1 — публичный MVP
 
 Статус: в выпуске.
