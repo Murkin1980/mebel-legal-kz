@@ -1034,3 +1034,11 @@ RLS: роль `operations` добавлена для execution-задач. Дл�
 - [x] AI/RAG, ЭСФ, банк, претензии и публичные согласования не добавлены.
 - [x] Реальные данные и значения секретов не помещены в Git или логи.
 - [x] Локальные тесты, typecheck, lint, Next.js build и OpenNext build пройдены.
+
+### Публикация и итоговая проверка
+
+- Cloudflare Worker version: `39cbd810-de35-4fe0-9b5f-4234eb440a64`.
+- Публичный URL: `https://mebel-legal-kz.muriktl.workers.dev/`.
+- Live smoke: `/` = 200, `/login` = 200, закрытый `/app/orders` = 307 на `/login`.
+- Проверки: 235 unit, 119 integration, 160 security, 57 real-DB security и 71 E2E.
+- Runtime `npm audit --omit=dev`: 0 уязвимостей.
