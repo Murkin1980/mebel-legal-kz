@@ -1112,3 +1112,24 @@ RLS: роль `operations` добавлена для execution-задач. Дл�
 - Документационный handoff не является продуктовым stage и не требует deployment.
 
 ---
+## Session: Stage 01 product shell implementation
+
+**Date:** 2026-07-26
+**Branch:** `codex/complete-mebeldocs-release`
+
+- Implemented the Stitch-aligned AppShell, mobile drawer, icon navigation and
+  unified purple/gold/champagne styling.
+- Rebuilt login with responsive desktop/mobile composition.
+- Business logic, database schema and migrations were not changed.
+- Passed typecheck, lint, 239 unit, 119 integration, 160 security, Next build,
+  OpenNext build, runtime audit and 8 public E2E checks.
+- Full authenticated E2E was limited by Supabase network timeouts.
+- Visual evidence is stored in `output/playwright/stage-01/`.
+
+### Foundation Check
+
+- [x] Order remains the top-level aggregate and contract remains optional.
+- [x] Tenant isolation, RLS and server authorization code were not changed.
+- [x] Money and audit/versioning behavior were not changed.
+- [x] No prohibited AI/RAG, ESF, bank or claims scope was added.
+- [x] No real data or secret values were added to Git.
