@@ -128,9 +128,6 @@ jobs:
       - run: npm ci
       - run: npx playwright install chromium
       - run: npm run build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       - name: Start application and run E2E tests
         shell: bash
         run: |
@@ -161,9 +158,6 @@ jobs:
       - run: npm ci
       - run: npx playwright install chromium
       - run: npm run build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       - name: Start application and run accessibility tests
         shell: bash
         run: |
