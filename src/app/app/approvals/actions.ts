@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { contractApprovalService } from '@/modules/approvals/approval.service';
+import { publicApprovalService } from '@/modules/approvals/public-approval.service';
 import { organizationService } from '@/modules/organizations/organization.service';
 import { AppError } from '@/modules/shared/errors';
 
@@ -11,6 +12,40 @@ export interface ActionResponse<T = void> {
   data?: T;
   error?: string;
   errorCode?: string;
+}
+
+export async function createClientApprovalLink(formData: {
+  approvalId: string;
+  expiresAt?: string;
+  commandId: string;
+}): Promise<ActionResponse<{ token: string; challenge: string; linkId: string }>> {
+  try {
+    const ctx = await getAuthContext();
+    if (!ctx) return { success: false, error: 'Не авторизован', errorCode: 'UNAUTHORIZED' };
+    const result = await publicApprovalService.createLink(formData, ctx.user.id, formData.commandId);
+    revalidatePath(`/app/approvals/${formData.approvalId}`);
+    return { success: true, data: { token: result.token, challenge: result.challenge, linkId: result.link.id } };
+  } catch (error) {
+    if (error instanceof AppError) return { success: false, error: error.message, errorCode: error.code };
+    return { success: false, error: 'Не удалось создать ссылку', errorCode: 'INTERNAL_ERROR' };
+  }
+}
+
+export async function revokeClientApprovalLink(formData: {
+  approvalId: string;
+  linkId: string;
+  commandId: string;
+}): Promise<ActionResponse<{ linkId: string }>> {
+  try {
+    const ctx = await getAuthContext();
+    if (!ctx) return { success: false, error: 'Не авторизован', errorCode: 'UNAUTHORIZED' };
+    const result = await publicApprovalService.revokeLink({ linkId: formData.linkId }, ctx.user.id, formData.commandId);
+    revalidatePath(`/app/approvals/${formData.approvalId}`);
+    return { success: true, data: { linkId: result.id } };
+  } catch (error) {
+    if (error instanceof AppError) return { success: false, error: error.message, errorCode: error.code };
+    return { success: false, error: 'Не удалось отозвать ссылку', errorCode: 'INTERNAL_ERROR' };
+  }
 }
 
 async function getAuthContext() {

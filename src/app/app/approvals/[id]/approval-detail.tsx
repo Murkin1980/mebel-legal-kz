@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { transitionContractApproval } from '../actions';
+import { createClientApprovalLink, revokeClientApprovalLink, transitionContractApproval } from '../actions';
 
 interface ApprovalDetailProps {
   approval: Record<string, unknown>;
   legalCase: Record<string, unknown> | null;
   pkg: Record<string, unknown> | null;
+  publicLink: Record<string, unknown> | null;
   userRole: string;
 }
 
@@ -37,11 +38,14 @@ const ALLOWED_TRANSITIONS: Record<string, { target: string; label: string; needs
   ],
 };
 
-export function ApprovalDetail({ approval, legalCase, pkg, userRole }: ApprovalDetailProps) {
+export function ApprovalDetail({ approval, legalCase, pkg, publicLink, userRole }: ApprovalDetailProps) {
   const router = useRouter();
   const [transitioning, setTransitioning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
+  const [invite, setInvite] = useState<{ url: string; challenge: string } | null>(null);
+  const createInviteCommandId = useRef(crypto.randomUUID());
+  const revokeInviteCommandId = useRef(crypto.randomUUID());
 
   const status = approval.status as string;
   const transitions = ALLOWED_TRANSITIONS[status] || [];
@@ -72,11 +76,54 @@ export function ApprovalDetail({ approval, legalCase, pkg, userRole }: ApprovalD
     }
   }
 
+  async function handleCreateInvite() {
+    setTransitioning(true);
+    setError(null);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const result = await createClientApprovalLink({ approvalId: approval.id as string, expiresAt, commandId: createInviteCommandId.current });
+    if (result.success && result.data) {
+      setInvite({ url: `${window.location.origin}/approve/${result.data.token}`, challenge: result.data.challenge });
+      router.refresh();
+    } else setError(result.error || 'Не удалось создать приглашение');
+    setTransitioning(false);
+  }
+
+  async function handleRevokeInvite() {
+    if (!publicLink) return;
+    setTransitioning(true);
+    const result = await revokeClientApprovalLink({ approvalId: approval.id as string, linkId: publicLink.id as string, commandId: revokeInviteCommandId.current });
+    if (!result.success) setError(result.error || 'Не удалось отозвать приглашение');
+    else { setInvite(null); router.refresh(); }
+    setTransitioning(false);
+  }
+
   return (
     <div>
       <div className="mb-6">
         <Link href="/app/approvals" className="text-sm text-blue-600 hover:underline">← Согласования</Link>
       </div>
+
+      {canManage && status === 'pending_review' && (
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-5">
+          <h2 className="font-semibold text-blue-900">Приглашение клиенту</h2>
+          <p className="mt-1 text-sm text-blue-800">Ссылка не показывает содержимое договора. Решение требует отдельного одноразового кода.</p>
+          {!publicLink ? (
+            <button onClick={handleCreateInvite} disabled={transitioning} className="mt-3 rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">Создать ссылку на 7 дней</button>
+          ) : (
+            <div className="mt-3 text-sm text-blue-900">
+              <p>Статус ссылки: {String(publicLink.status)}</p>
+              {publicLink.status === 'active' && <button onClick={handleRevokeInvite} disabled={transitioning} className="mt-2 rounded-md bg-white px-3 py-2 font-medium text-red-700">Отозвать ссылку</button>}
+            </div>
+          )}
+          {invite && (
+            <div className="mt-4 rounded-md bg-white p-3 text-sm text-gray-900">
+              <p className="font-semibold text-red-700">Сохраните сейчас: код повторно не показывается.</p>
+              <p className="mt-2 break-all"><b>Ссылка:</b> {invite.url}</p>
+              <p className="mt-1 font-mono text-lg"><b>Код:</b> {invite.challenge}</p>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex items-start justify-between mb-6">
         <div>

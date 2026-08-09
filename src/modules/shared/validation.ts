@@ -235,6 +235,27 @@ export const transitionContractApprovalStatusSchema = z.object({
 
 export type TransitionContractApprovalStatusInput = z.infer<typeof transitionContractApprovalStatusSchema>;
 
+// Stage 6: client approval links
+export const createApprovalPublicLinkSchema = z.object({
+  approvalId: uuidSchema,
+  expiresAt: z.string().datetime().optional(),
+});
+export type CreateApprovalPublicLinkInput = z.infer<typeof createApprovalPublicLinkSchema>;
+
+export const revokeApprovalPublicLinkSchema = z.object({ linkId: uuidSchema });
+export type RevokeApprovalPublicLinkInput = z.infer<typeof revokeApprovalPublicLinkSchema>;
+
+export const recordClientApprovalDecisionSchema = z.object({
+  token: z.string().min(32).max(256),
+  challengeCode: z.string().regex(/^[A-F0-9]{8}$/),
+  decision: z.enum(['approved', 'rejected']),
+  comment: z.string().max(2000).optional(),
+  clientName: z.string().max(200).optional(),
+  clientEmail: z.string().email().max(320).optional(),
+  commandId: uuidSchema.optional(),
+});
+export type RecordClientApprovalDecisionInput = z.infer<typeof recordClientApprovalDecisionSchema>;
+
 // ============================================================
 // Stage 5: Change Order commands
 // ============================================================

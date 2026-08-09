@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { contractPackageService } from '@/modules/packages/contract-package.service';
 import { organizationService } from '@/modules/organizations/organization.service';
 import { AppError } from '@/modules/shared/errors';
+import { ruleEvaluationService } from '@/modules/rules/rule-evaluation.service';
 
 export interface ActionResponse<T = void> {
   success: boolean;
@@ -80,6 +81,19 @@ export async function transitionContractPackage(formData: {
     revalidatePath(`/app/cases/${formData.legalCaseId}/packages`);
     revalidatePath(`/app/cases/${formData.legalCaseId}/packages/${formData.packageId}`);
     return { success: true, data: { packageId: result.id, status: result.status } };
+  } catch (error) {
+    if (error instanceof AppError) return { success: false, error: error.message, errorCode: error.code };
+    return { success: false, error: 'Внутренняя ошибка сервера', errorCode: 'INTERNAL_ERROR' };
+  }
+}
+
+export async function evaluateContractPackage(formData: { packageId: string; legalCaseId: string }): Promise<ActionResponse<{ status: string; summary: Record<string, unknown> }>> {
+  try {
+    const ctx = await getAuthContext();
+    if (!ctx) return { success: false, error: 'Не авторизован', errorCode: 'UNAUTHORIZED' };
+    const result = await ruleEvaluationService.evaluatePackage(formData.packageId, formData.legalCaseId, ctx.user.id);
+    revalidatePath(`/app/cases/${formData.legalCaseId}/packages/${formData.packageId}`);
+    return { success: true, data: { status: result.check.status, summary: result.check.summary } };
   } catch (error) {
     if (error instanceof AppError) return { success: false, error: error.message, errorCode: error.code };
     return { success: false, error: 'Внутренняя ошибка сервера', errorCode: 'INTERNAL_ERROR' };

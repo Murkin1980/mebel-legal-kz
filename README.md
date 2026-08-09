@@ -21,6 +21,8 @@ Password: Test123456!
 
 The demo contains synthetic data only. It does not contain real contracts, company details, customer records, or personal data.
 
+Roadmap stages 1–6 are implemented in the codebase. The deterministic rule-evaluation and external client-approval additions in migrations `031–033` require staging migration and real-database acceptance before use with real data.
+
 ---
 
 ## Why MebelLegal KZ exists

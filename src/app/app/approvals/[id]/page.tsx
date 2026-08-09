@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { organizationService } from '@/modules/organizations/organization.service';
 import { notFound } from 'next/navigation';
 import { ApprovalDetail } from './approval-detail';
+import { publicApprovalService } from '@/modules/approvals/public-approval.service';
 
 export default async function ApprovalDetailPage({
   params,
@@ -46,11 +47,16 @@ export default async function ApprovalDetailPage({
     .eq('id', approval.contract_package_id)
     .single();
 
+  const publicLink = role === 'owner' || role === 'manager'
+    ? await publicApprovalService.getLinkForStaff(approval.id, user.id)
+    : null;
+
   return (
     <ApprovalDetail
       approval={approval as Record<string, unknown>}
       legalCase={legalCase as Record<string, unknown> | null}
       pkg={pkg as Record<string, unknown> | null}
+      publicLink={publicLink as Record<string, unknown> | null}
       userRole={role || 'observer'}
     />
   );

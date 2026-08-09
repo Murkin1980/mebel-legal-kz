@@ -68,6 +68,7 @@ If you want to skip R2 for now, remove the `r2_buckets` section from `wrangler.j
 | `NEXT_PUBLIC_SUPABASE_URL` | **Public** | Yes | Supabase Dashboard → Settings → API | Inlined at build time, safe for browser |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Public** | Yes | Supabase Dashboard → Settings → API | Inlined at build time, safe for browser |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Server-only** | Yes | Supabase Dashboard → Settings → API | Set via `wrangler secret put` or Cloudflare dashboard. NEVER in `NEXT_PUBLIC_*` |
+| `APPROVAL_LINK_SECRET` | **Server-only** | Yes | Generate at least 32 random characters | HMAC secret for retry-safe client approval tokens. NEVER in `NEXT_PUBLIC_*` |
 | `NEXT_PUBLIC_APP_ENV` | **Public** | Yes | Manual | Set to `staging` for internal deployment |
 
 ### How to set env vars on Cloudflare
@@ -75,6 +76,7 @@ If you want to skip R2 for now, remove the `r2_buckets` section from `wrangler.j
 ```bash
 # Server-only secrets (never exposed to browser)
 wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+wrangler secret put APPROVAL_LINK_SECRET
 # Paste the service role key when prompted
 
 # Public vars — set in Cloudflare dashboard under Workers & Pages → Settings → Variables
@@ -121,6 +123,7 @@ Add:
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = `<anon key from .env.local>`
 - `NEXT_PUBLIC_APP_ENV` = `staging`
 - `SUPABASE_SERVICE_ROLE_KEY` = `<service role key>` (encrypt as secret)
+- `APPROVAL_LINK_SECRET` = `<32+ random characters>` (encrypt as secret)
 
 ### 4. Set Compatibility Flags
 
@@ -152,7 +155,7 @@ After deployment, verify manually:
 8. `/app/cases/[id]/changes` — change orders (after creating a case)
 9. `/app/cases/[id]/claims` — claims (after creating a case)
 10. No client-side errors in browser console
-11. No `SUPABASE_SERVICE_ROLE_KEY` visible in Network tab or client JS
+11. No `SUPABASE_SERVICE_ROLE_KEY` or `APPROVAL_LINK_SECRET` visible in Network tab or client JS
 
 ## Rollback
 

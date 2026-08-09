@@ -193,6 +193,39 @@ export interface ContractPackage {
   created_by: string;
 }
 
+export type RuleEvaluationResult = 'pass' | 'fail' | 'warning' | 'not_applicable';
+export type PackageCheckStatus = 'passed' | 'failed' | 'warnings';
+
+export interface ContractRuleEvaluation {
+  id: string;
+  organization_id: string;
+  legal_case_id: string;
+  contract_package_id: string;
+  package_version: number;
+  rule_id: string;
+  source_revision_id: string;
+  result: RuleEvaluationResult;
+  code: string;
+  message: string;
+  evidence: Record<string, unknown>;
+  evaluated_at: string;
+  evaluated_by: string;
+  command_id: string;
+}
+
+export interface ContractPackageCheck {
+  id: string;
+  organization_id: string;
+  legal_case_id: string;
+  contract_package_id: string;
+  package_version: number;
+  status: PackageCheckStatus;
+  summary: Record<string, unknown>;
+  evaluated_at: string;
+  evaluated_by: string;
+  command_id: string;
+}
+
 // Stage 4: Contract Approval
 export interface ContractApproval {
   id: string;
@@ -206,6 +239,44 @@ export interface ContractApproval {
   notes: string | null;
   created_at: string;
   created_by: string;
+}
+
+export type PublicApprovalLinkStatus = 'active' | 'revoked' | 'expired';
+export type ClientApprovalDecision = 'approved' | 'rejected';
+
+export interface ApprovalPublicLink {
+  id: string;
+  organization_id: string;
+  contract_approval_id: string;
+  contract_package_id: string;
+  token_hash: string;
+  challenge_hash: string;
+  challenge_attempts: number;
+  challenge_consumed_at: string | null;
+  status: PublicApprovalLinkStatus;
+  expires_at: string | null;
+  created_at: string;
+  created_by: string;
+  revoked_at: string | null;
+  revoked_by: string | null;
+  revoked_command_id: string | null;
+  command_id: string;
+}
+
+export interface ApprovalDecision {
+  id: string;
+  organization_id: string;
+  approval_public_link_id: string;
+  contract_approval_id: string;
+  contract_package_id: string;
+  decision: ClientApprovalDecision;
+  comment: string | null;
+  decided_at: string;
+  client_name: string | null;
+  client_email: string | null;
+  client_ip_hash: string | null;
+  user_agent_hash: string | null;
+  command_id: string;
 }
 
 // Stage 5: Change Order

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { transitionContractPackage } from '../actions';
+import { transitionContractPackage, evaluateContractPackage } from '../actions';
 
 interface Package {
   id: string;
@@ -58,6 +58,8 @@ export function PackageDetail({ pkg, canManage, canApprove }: PackageDetailProps
   const router = useRouter();
   const [transitioning, setTransitioning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [check, setCheck] = useState<{status: string; summary: Record<string, unknown>} | null>(null);
+  const [checking, setChecking] = useState(false);
 
   const allowedTransitions = ALLOWED_TRANSITIONS[pkg.status] || [];
 
@@ -81,6 +83,20 @@ export function PackageDetail({ pkg, canManage, canApprove }: PackageDetailProps
       setError('Ошибка сети');
     } finally {
       setTransitioning(false);
+    }
+  }
+
+  async function handleCheck() {
+    setChecking(true);
+    setError(null);
+    try {
+      const result = await evaluateContractPackage({ packageId: pkg.id, legalCaseId: pkg.legal_case_id });
+      if (result.success && result.data) setCheck(result.data);
+      else setError(result.error || 'Ошибка проверки');
+    } catch {
+      setError('Ошибка сети');
+    } finally {
+      setChecking(false);
     }
   }
 
@@ -158,6 +174,15 @@ export function PackageDetail({ pkg, canManage, canApprove }: PackageDetailProps
                   </button>
                 );
               })}
+            </div>
+          )}
+          <button onClick={handleCheck} disabled={checking} className="mt-4 w-full rounded-md bg-indigo-50 px-4 py-2 text-left text-sm font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50">
+            {checking ? 'Проверка…' : 'Запустить проверку правил'}
+          </button>
+          {check && (
+            <div className={`mt-3 rounded-md p-3 text-sm ${check.status === 'failed' ? 'bg-red-50 text-red-700' : check.status === 'warnings' ? 'bg-yellow-50 text-yellow-700' : 'bg-green-50 text-green-700'}`}>
+              <div className="font-semibold">Результат: {check.status}</div>
+              <div>Всего: {String(check.summary.total ?? 0)}, ошибок: {String(check.summary.fail ?? 0)}, предупреждений: {String(check.summary.warning ?? 0)}</div>
             </div>
           )}
         </div>
