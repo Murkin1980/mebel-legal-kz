@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('public login page renders without database credentials', async ({ page }) => {
   await page.goto('/login');
 
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('MebelLegal KZ');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('MebelDocs');
   await expect(page.locator('input[type="email"]')).toBeVisible();
   await expect(page.locator('input[type="password"]')).toBeVisible();
   await expect(page.locator('button[type="submit"]')).toBeVisible();
