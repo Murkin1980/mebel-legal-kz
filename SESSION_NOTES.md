@@ -1,5 +1,33 @@
 # SESSION_NOTES.md — MebelLegal KZ
 
+## Сессия: MBL-MB0 — фундамент миграции на MiniBase
+
+**Дата:** 20 августа 2026 года
+**Статус:** migration contracts prepared; Supabase runtime unchanged
+
+- Владелец одобрил полный переход с Supabase demo на MiniBase.
+- Выбрано `REUSE_COMPONENT`: отдельная project D1 за существующим MiniBase.
+- Supabase сохранён без изменений как read-only rollback source.
+- Добавлена отсутствовавшая bounded stage instruction и шестистадийный план с
+  manifest, NDJSON, Postgres-to-SQLite transform, безопасным Auth handoff,
+  checksums, reconciliation и rollback.
+- Foundation дополнен требованием доказуемого deny-by-default D1-эквивалента RLS.
+
+### Foundation Check
+
+- [x] Границы MebelLegal KZ / Interactive KP / MebelDocs AI не нарушены.
+- [x] Tenant isolation и RLS сохранены: Supabase runtime не изменён; D1 gated security tests обязательны.
+- [x] Серверная авторизация присутствует в target contract.
+- [x] Деньги не хранятся в float/JavaScript number.
+- [x] State transitions выполняются доменной командой.
+- [x] Юридически значимые действия идемпотентны.
+- [x] Audit log остаётся append-only.
+- [x] Подтверждённые данные версионируются.
+- [x] AI не выполняет запрещённые решения.
+- [x] В Git, логах и fixtures нет реальных данных и секретов.
+- [x] Изменение документирует обязательные будущие security/contract tests.
+- [x] Изменение соответствует разрешённому этапу MBL-MB0.
+
 ## Сессия: прототип объединённого документооборота
 
 **Дата:** 25 июля 2026 года

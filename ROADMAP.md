@@ -1,5 +1,21 @@
 # ROADMAP.md — MebelLegal KZ
 
+## Активный migration track — MiniBase
+
+```text
+MBL-MB0 Contracts/inventory       [##########] 100%
+MBL-MB1 Auth/authorization        [----------]   0%
+MBL-MB2 Schema/domain commands    [----------]   0%
+MBL-MB3 Auth handoff              [----------]   0%
+MBL-MB4 Import/reconciliation     [----------]   0%
+MBL-MB5 Shadow/cutover/rollback   [----------]   0%
+
+Overall                           [##--------]  17%
+```
+
+Supabase остаётся неизменённым runtime и rollback source до приёмки MBL-MB5.
+Подробный план: `docs/MINIBASE_MIGRATION_PLAN.md`.
+
 ## Этап 0–1: Инициализация и мультитенантное ядро ✅
 
 **Статус:** Завершён и принят по коду и локальным проверкам
